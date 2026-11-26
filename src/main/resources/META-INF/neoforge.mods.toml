@@ -1,0 +1,46 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="GPL-3.0-only"
+issueTrackerURL="https://github.com/SlayG/curatorium-essentials/issues"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="Curatorium Essentials"
+authors="Creatorium"
+credits="A NeoForge port of EssentialsX (https://github.com/EssentialsX/Essentials, GPL-3.0) by the EssentialsX team."
+description='''
+Server-only essentials for Creatorium: the commands, chat, spawn, economy and Discord features
+of EssentialsX, with LuckPerms permissions and Create: Numismatics coins as money.
+Clients do not need this mod.
+'''
+# Server-only: clients without the mod can join.
+displayTest="IGNORE_SERVER_VERSION"
+
+[[dependencies.${mod_id}]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.265,)"
+ordering="NONE"
+side="SERVER"
+
+[[dependencies.${mod_id}]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1,1.21.2)"
+ordering="NONE"
+side="SERVER"
+
+[[dependencies.${mod_id}]]
+modId="luckperms"
+type="optional"
+versionRange="[5.4,)"
+ordering="AFTER"
+side="SERVER"
+
+[[dependencies.${mod_id}]]
+modId="numismatics"
+type="optional"
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="SERVER"

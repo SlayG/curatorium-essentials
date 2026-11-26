@@ -1,0 +1,47 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.78'
+}
+
+version = mod_version
+group = mod_group_id
+base { archivesName = mod_id }
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    version = project.neo_version
+    runs {
+        // Dev server: loads NeoForge, this mod and any jars you drop into run/mods
+        // (e.g. LuckPerms from the Mod Repo). The mod is server-only, so there is no client run.
+        server { server(); programArgument '--nogui' }
+    }
+    mods {
+        "${mod_id}" { sourceSet(sourceSets.main) }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+def serverMods = file(project.server_mods_dir)
+
+dependencies {
+    // Compile against the exact jars the server runs. Both are optional at runtime.
+    compileOnly fileTree(dir: serverMods, include: [
+        'create-1.21.1-*.jar',
+        'CreateNumismatics-*.jar'
+    ])
+    // LuckPerms: its public API, from Maven Central. The mod itself is installed on the server.
+    compileOnly 'net.luckperms:api:5.4'
+}
+
+// Fills ${...} in neoforge.mods.toml from gradle.properties.
+tasks.named('processResources', ProcessResources) {
+    def props = [mod_id: mod_id, mod_version: mod_version]
+    inputs.properties props
+    filesMatching('META-INF/neoforge.mods.toml') { expand props }
+}
+
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
