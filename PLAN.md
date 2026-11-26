@@ -263,7 +263,11 @@ Planned:
 - Optional "must link to join" mode; unlinked players get the code in the kick message.
 - Links stored in `<world>/curatorium_essentials/discord-links.json`.
 
-## Phase 7 — Cleanup (0.8.0 → 1.0.0)
+## Phase 7 — Cleanup (0.8.0 → 1.0.0) — done
+
+**1.0.0 released 2026-11-26.** Everything in this plan is tested except nickname sync, which stays
+off on Creatorium by decision. Going live (the jar into the live server's mods folder) is a separate
+step, done only when the user says.
 
 Compared against the EssentialsX `2.x` command lists (2026-11-26): 147 of the 153 core commands were
 here, and all of Chat, Spawn, Discord and Discord Link. Missing were `/ext` and `/potion` (now

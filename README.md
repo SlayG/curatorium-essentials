@@ -11,6 +11,9 @@ What's done and what's next: [PLAN.md](PLAN.md).
 
 ## Status
 
+**1.0.0 (2026-11-26).** Every phase is done and tested on a dev server with Create, Numismatics,
+LuckPerms, Curatorium Claims and the real Discord bot; see [PLAN.md](PLAN.md) for what was tested.
+
 **0.8.0, Phase 7 (cleanup).** Checked against EssentialsX's full command list: `/ext` and
 `/potion` added; `/nuke`, `/powertool` (and `/ptlist`, `/ptt`), `/ptime`, `/pweather`, `/mail` and
 `/unlimited` removed (mail is handled by Curatorium Claims); `/pay` limited to 20 blocks.
