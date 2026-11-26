@@ -10,6 +10,13 @@ import dev.curatorium.essentials.commands.StateCommands;
 import dev.curatorium.essentials.commands.WorkstationCommands;
 import dev.curatorium.essentials.commands.WorldCommands;
 import dev.curatorium.essentials.kits.Kits;
+import dev.curatorium.essentials.teleport.Homes;
+import dev.curatorium.essentials.teleport.RandomTeleport;
+import dev.curatorium.essentials.teleport.Requests;
+import dev.curatorium.essentials.teleport.Spawns;
+import dev.curatorium.essentials.teleport.TeleportCommands;
+import dev.curatorium.essentials.teleport.Teleports;
+import dev.curatorium.essentials.teleport.Warps;
 import dev.curatorium.essentials.commands.MessagingCommands;
 import dev.curatorium.essentials.commands.PlayerCommands;
 import dev.curatorium.essentials.moderation.Bans;
@@ -75,6 +82,12 @@ public final class CuratoriumEssentials {
         WorldCommands.register();
         FunCommands.register();
         Kits.register();
+        TeleportCommands.register();
+        Requests.register();
+        Homes.register();
+        Warps.register();
+        Spawns.register();
+        RandomTeleport.register();
 
         IEventBus bus = NeoForge.EVENT_BUS;
         Chat.registerEvents(bus);
@@ -90,6 +103,11 @@ public final class CuratoriumEssentials {
         ItemCommands.registerEvents(bus);
         WorldCommands.registerEvents(bus);
         Kits.registerEvents(bus);
+        Teleports.registerEvents(bus);
+        Requests.registerEvents(bus);
+        Warps.registerEvents(bus);
+        Spawns.registerEvents(bus);
+        RandomTeleport.registerEvents(bus);
         bus.addListener(RegisterCommandsEvent.class, e -> CommandRegistry.registerAll(e.getDispatcher(), e.getBuildContext()));
         bus.addListener(ServerAboutToStartEvent.class, e -> {
             server = e.getServer();

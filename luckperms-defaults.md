@@ -152,7 +152,31 @@ gamemode kill list help`). The others keep vanilla's version and Essentials' is 
 through an alias: `/i` (`/item`), `/eenchant` (`/enchant`), `/erecipe` (`/recipe`),
 `/ci` (`/clear`), `/exp` (`/xp`). Add a name to the list to switch it over.
 
-## Teleport commands
+## Nodes (0.4.0: teleports and spawn)
 
-Teleport commands (Phase 3) default to **op 2**. Regular players don't get them unless a group is
-given the node.
+**Every teleport command is op 2**, homes, warps and `/spawn` included: regular players get none
+of them unless a group is given the node. Command nodes are `essentials.<command>` (`/homes`
+uses `essentials.home`).
+
+| Node | What it allows | Default |
+|---|---|---|
+| `essentials.tp.others` | `/tp` moving anyone but yourself | op 2 |
+| `essentials.home.others`, `essentials.sethome.others`, `essentials.delhome.others`, `essentials.renamehome.others` | Another player's homes, as `player:home` | op 2 |
+| `essentials.sethome.multiple.unlimited` | No home limit (otherwise `homes.defaultMax`, or `homes.groupMax` for a group) | op 4 |
+| `essentials.warp.others`, `essentials.setwarp.overwrite` | Sending others to a warp; moving an existing warp | op 2 |
+| `essentials.warps.<name>` | That warp, when `warps.perWarpPermission` is on | op 2 |
+| `essentials.spawn.others`, `essentials.back.others`, `essentials.tpr.others`, `essentials.tptoggle.others`, `essentials.tpauto.others` | Those commands for someone else | op 2 |
+| `essentials.back.ondeath` | `/back` to where you died | op 2 |
+| `essentials.teleport.timer.bypass`, `essentials.teleport.cooldown.bypass` | No warmup; no cooldown | op 4 |
+| `essentials.tptoggle.override` | Teleport to (or pull) players who turned teleports off | op 4 |
+| `essentials.teleport.safety.bypass` | Land exactly where sent, even if unsafe | nobody |
+| `essentials.teleport.bypass-siege` | Teleport in or out of a claim under siege | nobody (not even ops) |
+
+Let a group use homes and `/spawn` (for example, if teleports are ever opened up):
+
+```
+lp group default permission set essentials.home true
+lp group default permission set essentials.sethome true
+lp group default permission set essentials.delhome true
+lp group default permission set essentials.spawn true
+```

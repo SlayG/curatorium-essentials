@@ -139,7 +139,74 @@ public final class EssConfig {
                 .define("firstJoinKit", "");
         b.pop();
 
+        b.comment("Teleports (Phase 3). Every teleport command is op-only by default.").push("teleport");
+        TP_WARMUP = b.comment("Seconds to stand still before /home, /warp, /spawn, /back, /tpr and accepted /tpa requests",
+                        "teleport. 0 = instant. Bypass: essentials.teleport.timer.bypass.")
+                .defineInRange("warmupSeconds", 3, 0, 600);
+        TP_CANCEL_MOVE = b.comment("Moving during the warmup cancels the teleport.").define("cancelOnMove", true);
+        TP_CANCEL_DAMAGE = b.comment("Taking damage during the warmup cancels the teleport.").define("cancelOnDamage", true);
+        TP_COOLDOWN = b.comment("Seconds between those teleports. Bypass: essentials.teleport.cooldown.bypass.")
+                .defineInRange("cooldownSeconds", 0, 0, 86_400);
+        TP_SAFE = b.comment("Move teleports out of walls, lava and drops onto the nearest safe spot.",
+                        "Players in creative, spectator or flying skip this.")
+                .define("safeLocations", true);
+        TPA_TIMEOUT = b.comment("Seconds a /tpa or /tpahere request stays open.").defineInRange("requestTimeout", 120, 5, 3600);
+        BACK_ON_DEATH = b.comment("/back also returns to where you died (needs essentials.back.ondeath).").define("backOnDeath", true);
+        b.pop();
+
+        b.comment("Homes.").push("homes");
+        HOMES_DEFAULT = b.comment("Homes a player may set. Unlimited with essentials.sethome.multiple.unlimited.")
+                .defineInRange("defaultMax", 3, 1, 1000);
+        HOMES_GROUPS = b.comment("More homes for LuckPerms groups, as \"group=count\", e.g. [\"staff=10\"]. The highest that applies wins.")
+                .defineListAllowEmpty("groupMax", List.of(), EssConfig::isString);
+        b.pop();
+
+        b.comment("Warps.").push("warps");
+        PER_WARP_PERMISSION = b.comment("Each warp needs essentials.warps.<name> as well as essentials.warp.")
+                .define("perWarpPermission", false);
+        b.pop();
+
+        b.comment("Spawn (/spawn, /setspawn). Spawns are per LuckPerms group, with \"default\" for everyone else.").push("spawn");
+        NEW_PLAYER_SPAWN = b.comment("Spawn new players are sent to on their first join (a group name or \"default\"). \"none\" leaves them be.")
+                .define("newPlayerSpawn", "default");
+        SPAWN_ON_JOIN = b.comment("Send every player to their spawn each time they join.").define("spawnOnJoin", false);
+        RESPAWN_AT_SPAWN = b.comment("Players without a bed or respawn anchor respawn at their /spawn instead of the world spawn.")
+                .define("respawnAtSpawn", true);
+        b.pop();
+
+        b.comment("Random teleport (/tpr). Change the area per dimension in game with /settpr.").push("tpr");
+        TPR_MIN = b.comment("Default smallest distance from the centre.").defineInRange("minRange", 200, 0, 1_000_000);
+        TPR_MAX = b.comment("Default largest distance from the centre.").defineInRange("maxRange", 2000, 1, 1_000_000);
+        TPR_ATTEMPTS = b.comment("Places tried (one per tick) before giving up.").defineInRange("attempts", 20, 1, 200);
+        TPR_AVOID_CLAIMS = b.comment("Never land inside a Curatorium Claims claim.").define("avoidClaims", true);
+        b.pop();
+
         SPEC = b.build();
+    }
+
+    public static final ModConfigSpec.IntValue TP_WARMUP;
+    public static final ModConfigSpec.BooleanValue TP_CANCEL_MOVE;
+    public static final ModConfigSpec.BooleanValue TP_CANCEL_DAMAGE;
+    public static final ModConfigSpec.IntValue TP_COOLDOWN;
+    public static final ModConfigSpec.BooleanValue TP_SAFE;
+    public static final ModConfigSpec.IntValue TPA_TIMEOUT;
+    public static final ModConfigSpec.BooleanValue BACK_ON_DEATH;
+    public static final ModConfigSpec.IntValue HOMES_DEFAULT;
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> HOMES_GROUPS;
+    public static final ModConfigSpec.BooleanValue PER_WARP_PERMISSION;
+    public static final ModConfigSpec.ConfigValue<String> NEW_PLAYER_SPAWN;
+    public static final ModConfigSpec.BooleanValue SPAWN_ON_JOIN;
+    public static final ModConfigSpec.BooleanValue RESPAWN_AT_SPAWN;
+    public static final ModConfigSpec.IntValue TPR_MIN;
+    public static final ModConfigSpec.IntValue TPR_MAX;
+    public static final ModConfigSpec.IntValue TPR_ATTEMPTS;
+    public static final ModConfigSpec.BooleanValue TPR_AVOID_CLAIMS;
+
+    private static Map<String, Long> homeGroups = Map.of();
+
+    /** LuckPerms group -> max homes. */
+    public static Map<String, Long> homeGroups() {
+        return homeGroups;
     }
 
     private static final ModConfigSpec.ConfigValue<List<? extends String>> MUTE_BLOCKED;
@@ -212,12 +279,13 @@ public final class EssConfig {
         if (!SPEC.isLoaded()) return;
         disabled = lower(DISABLED.get());
         overrideVanilla = lower(OVERRIDE_VANILLA.get());
-        cooldowns = pairs(COOLDOWNS.get(), "cooldowns");
-        costs = pairs(COSTS.get(), "costs");
+        cooldowns = pairs(COOLDOWNS.get(), "commands.cooldowns");
+        costs = pairs(COSTS.get(), "commands.costs");
         countEnderChest = COUNT_ENDER_CHEST.get();
         muteBlocked = lower(MUTE_BLOCKED.get());
         jailAllowed = lower(JAIL_ALLOWED.get());
         itemBlacklist = lower(ITEM_BLACKLIST.get());
+        homeGroups = pairs(HOMES_GROUPS.get(), "homes.groupMax");
         Map<String, String> formats = new HashMap<>();
         for (String entry : GROUP_FORMATS.get()) {
             int eq = entry.indexOf('=');
@@ -246,7 +314,7 @@ public final class EssConfig {
                 if (value < 0) throw new NumberFormatException();
                 out.put(entry.substring(0, eq).trim().toLowerCase(Locale.ROOT), value);
             } catch (NumberFormatException e) {
-                CuratoriumEssentials.LOGGER.warn("Ignoring bad commands.{} entry \"{}\" (expected command=number)", what, entry);
+                CuratoriumEssentials.LOGGER.warn("Ignoring bad {} entry \"{}\" (expected name=number)", what, entry);
             }
         }
         return out;

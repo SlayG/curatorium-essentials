@@ -23,7 +23,7 @@ Numismatics instead of Vault), Discord and Discord Link.
 
 ## Still open (answer before the phase that needs it)
 
-1. **Do homes, warps and `/spawn` count as "teleport"?** The plan treats them as op-only too, along with `/back`, `/top`, `/tpr`. If players should keep `/spawn` (or homes), that's one line in the default permission setup.
+1. ~~Do homes, warps and `/spawn` count as "teleport"?~~ **Decided (2026-11-26): yes.** Every teleport command, homes, warps and `/spawn` included, is op-only by default.
 2. **Paying offline players (Phase 4).** With physical coins only, `/pay` and `/eco give` need the recipient online, since the coins go into their inventory. Default: refuse if they're offline. Alternative: hold the coins and hand them over at their next login.
 3. **`/balancetop` (Phase 4).** Only coins a player carries can be counted, not coins in chests. Default: rank online players by carried coins, plus each offline player's carried coins at their last logout, labelled "carried coins". Alternative: leave `/balancetop` out.
 4. **Ender chest (Phase 4).** Default: coins in the ender chest are not counted or spent. Can be switched on in config.
@@ -116,7 +116,27 @@ Planned:
 - Fun (all op-only by default): `beezooka`, `kittycannon`, `fireball`, `firework`, `nuke`, `antioch`, `ice`, `break`.
 - Kits: `kit`, `createkit`, `delkit`, `showkit`, `kitreset`; GUI kit picker; per-kit cooldown, one-time kits, first-join kit. Costs arrive in Phase 4.
 
-## Phase 3 — Teleport and Spawn (0.4.0) — op-only by default
+## Phase 3 — Teleport and Spawn (0.4.0) — op-only by default — done
+
+Tested on the dev server with two bot players and LuckPerms 5.4.150: every teleport command is
+hidden from a non-op; /tp in vanilla's forms, /tphere, /tpo, /tpall, /tppos, /tpoffline, /top,
+/bottom, /world (overworld and Nether), /back; homes (set, limit, GUI, rename, delete, another
+player's with `player:home`, `bed`); warps (set, move, info, GUI, sending someone, delete);
+/setspawn and /spawn, respawning at /spawn without a bed; /tpr and /settpr; requests (/tpa,
+/tpahere, /tpaall, accept and deny by name or newest, /tpacancel, /tpauto, clickable buttons);
+/tptoggle; the warmup (cancelled by moving or by damage). Then checked in a real vanilla client:
+the home and warp GUIs, safe landings, /back after death, /tpr, the warmup, and /tpa and /tpahere
+with the clickable buttons. Not tested yet: the siege block (needs
+Curatorium Claims and a running siege), per-group spawns and the first-join spawn with a real
+new player, the End with /world.
+
+Notes from building it:
+- The siege check reaches Curatorium Claims by reflection, so Essentials builds and runs without it. Nobody has `essentials.teleport.bypass-siege` unless LuckPerms grants it, ops included.
+- Warmup (default 3 s) and cooldown apply to the "travel" teleports: home, warp, spawn, back, accepted requests, tpr. Staff teleports (tp, tphere, tppos…) are instant. Op 4 skips warmups and cooldowns.
+- Home limits come from `homes.defaultMax` and `homes.groupMax` (checked with LuckPerms' `group.<name>` nodes).
+- `/return` is a vanilla command in 1.21.1, so it stays vanilla; /back answers to `/back` and `/eback`.
+
+Planned:
 
 - Requests: `tpa`, `tpahere`, `tpaall`, `tpaccept`, `tpdeny`, `tpacancel`, `tpauto`, `tptoggle`.
 - Direct: `tp`, `tphere`, `tpall`, `tpo`, `tpohere`, `tppos`, `tpoffline`, `top`, `bottom`, `jump`, `world`, `back` (also after death).

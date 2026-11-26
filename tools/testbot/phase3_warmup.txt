@@ -1,0 +1,10 @@
+console difficulty easy ;; lp user Bob permission set essentials.spawn true
+sleep 1
+Alice /tppos 60 120 60
+Bob /spawn
+move Bob 2
+Bob /spawn
+console damage Bob 1
+Bob /spawn
+sleep 3.5
+console lp user Bob permission unset essentials.spawn ;; difficulty peaceful

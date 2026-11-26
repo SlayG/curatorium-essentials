@@ -74,6 +74,16 @@ public final class UserData {
     /** Kit name -> epoch millis of the last time it was taken. */
     public Map<String, Long> kitsUsed = new HashMap<>();
 
+    // ------------------------------------------------------------ teleports (Phase 3)
+    /** Home name (lower case) -> location. */
+    public Map<String, Location> homes = new java.util.TreeMap<>();
+    /** Where /back goes: the place before the last teleport, or where the player died. */
+    public Location lastLocation;
+    /** /tptoggle: others may teleport to this player or send requests (false blocks them). */
+    public boolean teleportEnabled = true;
+    /** /tpauto: accept teleport requests automatically. */
+    public boolean tpAuto;
+
     public boolean isMuted(long now) {
         return muteUntil == -1 || muteUntil > now;
     }
@@ -112,6 +122,7 @@ public final class UserData {
         if (powertools == null) powertools = new HashMap<>();
         if (unlimited == null) unlimited = new HashSet<>();
         if (kitsUsed == null) kitsUsed = new HashMap<>();
+        if (homes == null) homes = new java.util.TreeMap<>();
         mail.removeIf(m -> m == null || m.message == null);
         long now = System.currentTimeMillis();
         mail.removeIf(m -> m.expired(now));

@@ -11,6 +11,12 @@ What's done and what's next: [PLAN.md](PLAN.md).
 
 ## Status
 
+**0.4.0, Phase 3 (teleports and spawn).** Direct teleports (vanilla-compatible `/tp`), requests with
+clickable accept/deny, `/back` (also after death), homes and warps with GUIs, `/spawn` per LuckPerms
+group with respawning at spawn, random teleport, warmups that cancel on moving or damage, safe
+landing spots, and no teleporting in or out of a Curatorium Claims claim under siege. Every
+teleport is op-only by default.
+
 **0.3.0, Phase 2 (moderation and admin).** Bans (in the vanilla ban lists, so `/pardon` still
 works), mutes, jails, vanish, god/fly/gamemode/heal and the other player commands, `/invsee`,
 item commands, power tools, portable workstations, time and weather (also per player), world
@@ -32,7 +38,8 @@ is optional; without it, the economy is off. Nothing goes in the client pack.
 | `config/curatorium_essentials/messages.properties` | Every message the mod shows, with `&` colour codes. Run `/essentials reload` after editing. |
 | `config/curatorium_essentials/motd.txt`, `rules.txt`, `info.txt`, `custom.txt` | Text for `/motd` (also shown on join), `/rules`, `/info` and `/customtext`. Lines starting with `#` start a chapter. |
 | `config/curatorium_essentials/config.toml` moderation, jail, items, world, kits sections | Mute-blocked commands, jail rules (allowed commands, radius, online-time sentences), item blacklist, `/clearinventory` confirmation, `/spawnmob` limit, the `/backup` script, the first-join kit. |
-| `<world>/curatorium_essentials/` | Player data (`userdata/<uuid>.json`), `jails.json`, `kits.json`, and in later phases warps and so on. |
+| `config/curatorium_essentials/config.toml` teleport, homes, warps, spawn, tpr sections | Warmup, cooldown, safe spots, request timeout, home limits per group, per-warp permissions, first-join and respawn spawn, random-teleport range. |
+| `<world>/curatorium_essentials/` | Player data (`userdata/<uuid>.json`, homes included), `jails.json`, `kits.json`, `warps.json`, `spawns.json`, `tpr.json`. |
 | `logs/curatorium_essentials-economy.log` | Every coin taken or given by the mod. |
 
 ## Building

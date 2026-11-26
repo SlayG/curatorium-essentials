@@ -1,0 +1,104 @@
+# Phase 3: teleports and spawn. Alice is op, Bob isn't (teleports are op-only).
+console difficulty peaceful ;; time set day ;; lp user Bob permission unset essentials.kits.starter
+Bob /home
+Bob /spawn
+Bob /tpa Alice
+# ---- direct
+Alice /tppos 100 120 100
+state Alice
+Alice /tp Bob
+state Alice
+Alice /tp Bob 0 130 0
+state Bob
+Alice /tphere Bob
+Alice /back
+sleep 3.5
+state Alice
+Alice /top
+Alice /bottom
+Alice /world minecraft:the_nether
+state Alice
+Alice /world minecraft:overworld
+state Alice
+Alice /tpoffline Bob
+Alice /tptoggle Bob
+Alice /tp Bob
+Alice /tpo Bob
+Alice /tptoggle Bob
+Alice /tpall
+# ---- homes
+Alice /sethome
+Alice /sethome base
+Alice /sethome mine
+Alice /sethome fourth
+Alice /tppos 50 120 50
+Alice /home base
+sleep 3.5
+state Alice
+Alice /home base
+move Alice 2
+sleep 3.5
+Alice /homes
+click Alice 0
+sleep 3.5
+Alice /renamehome mine quarry
+Alice /delhome quarry
+Alice /sethome Bob:spot
+Alice /homes Bob
+close Alice
+Alice /home Bob:spot
+sleep 3.5
+Alice /home bed
+# ---- warps
+Alice /setwarp market
+Alice /setwarp market
+Alice /warpinfo market
+Alice /tppos 20 120 20
+Alice /warp market
+sleep 3.5
+state Alice
+Alice /warp market Bob
+sleep 3.5
+Alice /warp
+close Alice
+Alice /delwarp market
+Alice /warp
+# ---- spawn
+Alice /setspawn
+Alice /tppos 80 120 80
+Alice /spawn
+sleep 3.5
+state Alice
+Alice /spawn Bob
+Alice /kill Bob
+sleep 1
+state Bob
+# ---- random teleport
+Alice /settpr
+Alice /settpr maxrange 500
+Alice /tpr
+sleep 5
+state Alice
+Alice /settpr reset
+# ---- requests (give Bob the request nodes)
+console lp user Bob permission set essentials.tpa true ;; lp user Bob permission set essentials.tpaccept true ;; lp user Bob permission set essentials.tpdeny true ;; lp user Bob permission set essentials.tpahere true ;; lp user Bob permission set essentials.tpacancel true
+sleep 1
+Bob /tpa Alice
+Alice /tpdeny
+Bob /tpa Alice
+Alice /tpaccept Bob
+sleep 3.5
+state Bob
+Alice /tpahere Bob
+Bob /tpaccept
+sleep 3.5
+Bob /tpa Alice
+Bob /tpacancel
+Alice /tpaccept
+Alice /tpauto
+Bob /tpa Alice
+sleep 3.5
+Alice /tpauto
+Alice /tpaall
+Bob /tpdeny Alice
+console lp user Bob permission unset essentials.tpa ;; lp user Bob permission unset essentials.tpaccept ;; lp user Bob permission unset essentials.tpdeny ;; lp user Bob permission unset essentials.tpahere ;; lp user Bob permission unset essentials.tpacancel ;; delhome Alice:home

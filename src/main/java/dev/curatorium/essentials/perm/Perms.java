@@ -24,6 +24,9 @@ public final class Perms {
     /** Default for server-management nodes: op level 4. */
     public static final int ADMIN = 4;
 
+    /** Default for nodes nobody has unless LuckPerms grants them (e.g. group.<name> checks). */
+    public static final int NOBODY = 5;
+
     private static boolean luckPerms;
 
     public static void onServerStarted(MinecraftServer server) {
