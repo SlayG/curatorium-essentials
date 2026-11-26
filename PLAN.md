@@ -126,8 +126,11 @@ player's with `player:home`, `bed`); warps (set, move, info, GUI, sending someon
 /tpahere, /tpaall, accept and deny by name or newest, /tpacancel, /tpauto, clickable buttons);
 /tptoggle; the warmup (cancelled by moving or by damage). Then checked in a real vanilla client:
 the home and warp GUIs, safe landings, /back after death, /tpr, the warmup, and /tpa and /tpahere
-with the clickable buttons. /world to the End tested in a real client (2026-11-26). Not tested yet:
-per-group spawns and the first-join spawn with a real new player.
+with the clickable buttons. /world to the End tested in a real client (2026-11-26). Spawns tested
+with new bot players (2026-11-26): a first join lands on `newPlayerSpawn` (default, or a named
+spawn), later joins stay put, `/spawn` and respawning without a bed go to the player's primary-group
+spawn (else default), and `spawnOnJoin` sends a returning player there. A `/spawnpoint` counts as a
+bed and is left alone.
 
 Siege block tested 2026-11-26 with Curatorium Claims 1.3.1 and a real siege (an op bot as the
 defender, a Siege Engine powered by a Creative Motor): during the attack every teleport into or
@@ -232,8 +235,10 @@ jar (~8–10 MB larger).
 Tested on the dev server with the real Discord server: linking with a code from /link (slash
 command), unlinking, a LuckPerms group giving a Discord role (`groupsToRoles`) and unlinking taking
 it away, a Discord role putting a player in a group (`rolesToGroups`), and "must link to join"
-refusing an unlinked bot player at login with its code. Not tested yet: linking by direct message,
-nickname sync, the member intent, and the 10-minute resync.
+refusing an unlinked bot player at login with its code. The resync was tested with
+`resyncMinutes = 1` by giving and then removing a Discord role through the API: the mapped group
+was added, then removed, each at the next resync. Not tested yet: linking by direct message,
+nickname sync and the member intent.
 
 Notes from building it:
 - Settings are in the `[link]` section of `discord.toml`. Each map goes one way: `rolesToGroups` (the role decides the group) and `groupsToRoles` (the group decides the role). A pair in both: Discord wins on join.
