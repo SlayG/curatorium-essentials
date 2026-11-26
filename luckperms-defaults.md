@@ -66,7 +66,6 @@ lp group default permission set essentials.chat.color true
 | `essentials.msg`, `essentials.r` | `/msg` (aliases `/tell`, `/w`, `/m`, `/pm`, `/whisper`…), `/r` |
 | `essentials.rtoggle`, `essentials.msgtoggle` | `/rtoggle` (who `/r` answers), `/msgtoggle` (block private messages) |
 | `essentials.ignore` | `/ignore` |
-| `essentials.mail`, `essentials.mail.send` | `/mail read`, `/mail clear`, `/mail send` |
 | `essentials.me`, `essentials.helpop` | `/me`, `/helpop` |
 | `essentials.afk`, `essentials.afk.message`, `essentials.afk.auto` | `/afk`, an AFK message, being marked AFK automatically |
 | `essentials.list`, `essentials.motd`, `essentials.rules`, `essentials.info`, `essentials.customtext`, `essentials.help` | Information commands (and the MOTD on join) |
@@ -90,7 +89,6 @@ lp group default permission set essentials.chat.color true
 | `essentials.seen.extra`, `essentials.seen.ip` | IP and logout location in `/seen`; `/seen <ip>` |
 | `essentials.getpos.others`, `essentials.afk.others` | Other players' position; marking others AFK |
 | `essentials.afk.kickexempt` | Never kicked for AFK |
-| `essentials.mail.sendtemp`, `essentials.mail.sendall`, `essentials.mail.nolimit` | Expiring mail, mail to everyone, no mail rate limit |
 | `essentials.helpop.receive` | Receives `/helpop` messages |
 | `essentials.chat.spy` | Sees local chat from out of range |
 | `essentials.chat.color`, `.format`, `.magic` | Codes in chat |
@@ -119,7 +117,7 @@ The command node is `essentials.<command>`; `/gmc`, `/gms`, `/gma`, `/gmsp` use
 | Node | What it allows | Default |
 |---|---|---|
 | `essentials.ban.offline`, `essentials.mute.offline`, `essentials.togglejail.offline` | Ban, mute or jail players who are offline | op 2 |
-| `essentials.ban.exempt`, `essentials.kick.exempt`, `essentials.mute.exempt`, `essentials.jail.exempt`, `essentials.kill.exempt`, `essentials.sudo.exempt`, `essentials.lightning.exempt`, `essentials.nuke.exempt`, `essentials.kickall.exempt` | Can't be banned, kicked, muted… by others | op 4 |
+| `essentials.ban.exempt`, `essentials.kick.exempt`, `essentials.mute.exempt`, `essentials.jail.exempt`, `essentials.kill.exempt`, `essentials.sudo.exempt`, `essentials.lightning.exempt`, `essentials.kickall.exempt` | Can't be banned, kicked, muted… by others | op 4 |
 | `essentials.ban.notify`, `essentials.banip.notify`, `essentials.kick.notify`, `essentials.mute.notify`, `essentials.jail.notify` | Sees ban, kick, mute and jail announcements | op 2 |
 | `essentials.vanish.see` | Sees vanished players (entity, tab list, `/list`, join and quit messages) | op 2 |
 | `essentials.gamemode.<survival\|creative\|adventure\|spectator>`, `essentials.gamemode.others` | Each game mode; changing others' | op 2 |
@@ -135,8 +133,8 @@ The command node is `essentials.<command>`; `/gmc`, `/gms`, `/gma`, `/gmsp` use
 | `essentials.kit.others`, `essentials.kit.exemptdelay` | Giving kits to others; ignoring kit delays | op 2 / op 4 |
 | `essentials.break.bedrock` | `/break` on bedrock | op 4 |
 
-Op 4 commands: `/kickall`, `/sudo`, `/unlimited`, `/createkit`, `/delkit`, `/kitreset`,
-`/backup`, `/nuke`, `/antioch`, `/break`.
+Op 4 commands: `/kickall`, `/sudo`, `/createkit`, `/delkit`, `/kitreset`, `/backup`,
+`/antioch`, `/break`.
 
 Give everyone a starter kit:
 
@@ -211,3 +209,13 @@ messages reach players with `essentials.helpop.receive`.
 | `essentials.link`, `essentials.unlink` | Linking and unlinking your own account | everyone |
 | `essentials.unlink.others` | `/unlink <player>` | op 2 |
 | `essentials.link.bypass` | Joining without linking when `link.required` is on | op 4 |
+
+## Nodes (0.8.0: cleanup)
+
+| Node | What it allows | Default |
+|---|---|---|
+| `essentials.ext`, `essentials.ext.others` | Putting out yourself or another player | op 2 |
+| `essentials.potion` | Changing the potion in hand | op 2 |
+| `essentials.potion.<effect>` | Adding that effect (e.g. `essentials.potion.strength`) | op 2 |
+| `essentials.pay.bypassrange` | `/pay` beyond `economy.payRange`, to another dimension, or to an offline player | op 2 |
+| `essentials.potion.apply` | `/potion apply`: taking the potion's effects without drinking it | op 2 |

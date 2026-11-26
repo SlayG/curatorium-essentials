@@ -83,6 +83,7 @@ public final class CuratoriumEssentials {
         Mutes.register();
         Jails.register();
         StateCommands.register();
+        dev.curatorium.essentials.commands.PotionCommands.register();
         ItemCommands.register();
         WorkstationCommands.register();
         WorldCommands.register();

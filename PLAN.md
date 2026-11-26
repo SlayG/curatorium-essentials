@@ -24,7 +24,7 @@ Numismatics instead of Vault), Discord and Discord Link.
 ## Still open (answer before the phase that needs it)
 
 1. ~~Do homes, warps and `/spawn` count as "teleport"?~~ **Decided (2026-11-26): yes.** Every teleport command, homes, warps and `/spawn` included, is op-only by default.
-2. ~~Paying offline players.~~ **Decided (2026-11-26): hold the coins in escrow** and hand them over at the recipient's next login.
+2. ~~Paying offline players.~~ **Decided (2026-11-26): hold the coins in escrow** and hand them over at the recipient's next login. **Changed in Phase 7:** `/pay` needs both players within 20 blocks, so only `/eco give` (and `/pay` with `economy.payRange = 0`) still holds coins for offline players.
 3. ~~`/balancetop`.~~ **Decided (2026-11-26): left out.**
 4. ~~Ender chest.~~ **Decided (2026-11-26): not counted or spent** (`economy.countEnderChest` stays off by default).
 5. ~~Discord bot.~~ **Done (2026-11-26):** the bot (Ashru) exists and its token is in the dev server's `discord.toml`, which is never committed.
@@ -50,7 +50,7 @@ replacing vanilla commands. These get tested with Phase 1.
 
 - Gradle project copied from `curatorium-exchange`'s setup; compiles against `C:/Creatorium/Mod Repo` (Numismatics) and the LuckPerms API from Maven (`net.luckperms:api`, compile-only).
 - LuckPerms for NeoForge goes in `Mod Repo` for local testing (only needed to run, not to build). Use 5.4.150; see Phase 1.
-- **Data**: per-player JSON at `<world>/curatorium_essentials/userdata/<uuid>.json` (homes, nick, mail, ignores, mute/jail state, last location, playtime, flags); `warps/`, `jails.json`, `kits.json`, `spawn.json`. Saved asynchronously, flushed on stop.
+- **Data**: per-player JSON at `<world>/curatorium_essentials/userdata/<uuid>.json` (homes, nick, ignores, mute/jail state, last location, playtime, flags); `warps/`, `jails.json`, `kits.json`, `spawn.json`. Saved asynchronously, flushed on stop.
 - **Config**: `config/curatorium_essentials/` — `config.toml` (mirrors EssentialsX `config.yml` sections), `chat.toml`, `economy.toml`, `discord.toml`, `messages.properties`, `motd.txt`, `rules.txt`, `info.txt`.
 - **Permission layer**: registers every node with the NeoForge PermissionAPI, with a default (op level or everyone). LuckPerms then overrides per group. Ships a `luckperms-defaults.md` with the commands to set up `default` and `staff` groups.
 - **Shared services**: cooldowns and warmups, command costs, player lookup (online/offline, by nick), user cache, `/essentials reload`, `/essentials version`.
@@ -246,7 +246,17 @@ Planned:
 
 ## Phase 7 — Cleanup (0.8.0 → 1.0.0)
 
-- Fill gaps against the EssentialsX command list (core, Chat, Spawn, Discord, Discord Link), then 1.0.0.
+Compared against the EssentialsX `2.x` command lists (2026-11-26): 147 of the 153 core commands were
+here, and all of Chat, Spawn, Discord and Discord Link. Missing were `/ext` and `/potion` (now
+added), `/balancetop` and `/worth`, `/setworth`, `/sell` (left out on purpose), and EssentialsX XMPP
+(not included).
+
+Done in 0.8.0, bot-tested on the dev server:
+- Added `/ext` (`/extinguish`) and `/potion` (`clear`, `apply`, `effect:<effect> power:<n> duration:<seconds> [splash:true]`, per-effect nodes).
+- Removed, as the server won't use them: `/nuke`; `/powertool`, `/powertoollist`, `/powertooltoggle`; `/ptime`, `/pweather`; `/mail` (Curatorium Claims handles mail); `/unlimited`. Their stored player data is dropped the next time a player's file is saved.
+- `/pay` now works only between players in the same dimension within `economy.payRange` (20, matching Curatorium Exchange's ranges); a vanished player can't be paid by someone who can't see them. 0 lifts the limit; staff with `essentials.pay.bypassrange` (op 2) pay anyone, anywhere, offline players included.
+
+Still to do before 1.0.0: anything else from the review, and the untested items listed under each phase.
 
 ## Testing and deployment
 

@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalLong;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -38,7 +36,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.features.TreeFeatures;
-import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -55,7 +52,6 @@ import net.minecraft.world.entity.ambient.AmbientCreature;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
-import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.decoration.Painting;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -71,16 +67,12 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /** Time, weather, lightning, entities, trees, server status and backups. */
 public final class WorldCommands {
     public static void register() {
         CommandRegistry.add(new Time());
-        CommandRegistry.add(new PTime());
         CommandRegistry.add(new Weather());
-        CommandRegistry.add(new PWeather());
         CommandRegistry.add(new Thunder());
         CommandRegistry.add(new Lightning());
         CommandRegistry.add(new Remove());
@@ -92,25 +84,7 @@ public final class WorldCommands {
         CommandRegistry.add(new Backup());
     }
 
-    /** Per-player time (fixed, in ticks) and weather (true = rain). */
-    private static final Map<UUID, Long> playerTime = new ConcurrentHashMap<>();
-    private static final Map<UUID, Boolean> playerWeather = new ConcurrentHashMap<>();
-
     public static void registerEvents(IEventBus bus) {
-        // The server sends the real time every second; send each /ptime player theirs straight after.
-        // While the real weather fades in or out the server sends the rain level every tick, so
-        // /pweather players get theirs every tick then too.
-        bus.addListener(ServerTickEvent.Post.class, e -> {
-            boolean second = e.getServer().getTickCount() % 20 == 0;
-            for (ServerPlayer p : e.getServer().getPlayerList().getPlayers()) {
-                if (second && playerTime.containsKey(p.getUUID())) sendTime(p);
-                if (playerWeather.containsKey(p.getUUID()) && (second || changing(p.serverLevel()))) sendWeather(p);
-            }
-        });
-        bus.addListener(PlayerEvent.PlayerLoggedOutEvent.class, e -> {
-            playerTime.remove(e.getEntity().getUUID());
-            playerWeather.remove(e.getEntity().getUUID());
-        });
     }
 
     static ServerLevel levelOf(CommandSourceStack src) {
@@ -244,78 +218,10 @@ public final class WorldCommands {
                 if (level == ctx.getSource().getLevel()) shown = target;
             }
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-                if (!playerTime.containsKey(p.getUUID())) {
-                    p.connection.send(new ClientboundSetTimePacket(p.level().getGameTime(), p.level().getDayTime(),
-                            p.level().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
-                }
+                p.connection.send(new ClientboundSetTimePacket(p.level().getGameTime(), p.level().getDayTime(),
+                        p.level().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
             }
             reply(ctx, Messages.get("time.set", describe(shown)));
-            return 1;
-        }
-    }
-
-    static void sendTime(ServerPlayer p) {
-        Long t = playerTime.get(p.getUUID());
-        if (t == null) {
-            p.connection.send(new ClientboundSetTimePacket(p.level().getGameTime(), p.level().getDayTime(),
-                    p.level().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
-        } else {
-            p.connection.send(new ClientboundSetTimePacket(p.level().getGameTime(), t, false));
-        }
-    }
-
-    private static boolean changing(ServerLevel level) {
-        float rain = level.getRainLevel(1), thunder = level.getThunderLevel(1);
-        return (rain > 0 && rain < 1) || (thunder > 0 && thunder < 1);
-    }
-
-    static void sendWeather(ServerPlayer p) {
-        Boolean rain = playerWeather.get(p.getUUID());
-        boolean raining = rain != null ? rain : p.level().isRaining();
-        p.connection.send(new ClientboundGameEventPacket(raining ? ClientboundGameEventPacket.START_RAINING : ClientboundGameEventPacket.STOP_RAINING, 0));
-        p.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE,
-                rain != null ? (rain ? 1 : 0) : p.level().getRainLevel(1)));
-        p.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE,
-                rain != null ? 0 : p.level().getThunderLevel(1)));
-    }
-
-    /** /ptime <time|reset> [player]: the time only this player sees (frozen). */
-    static final class PTime extends EssCommand {
-        PTime() {
-            super("ptime", Perms.OP, "eptime", "playertime", "eplayertime");
-        }
-
-        @Override
-        protected void build(LiteralArgumentBuilder<CommandSourceStack> root) {
-            root.executes(exec(ctx -> {
-                ServerPlayer me = self(ctx);
-                Long t = playerTime.get(me.getUUID());
-                reply(ctx, t == null ? Messages.get("ptime.normal") : Messages.get("ptime.fixed", describe(t)));
-                return 1;
-            })).then(Commands.argument("time", StringArgumentType.word()).suggests((c, b) -> {
-                List<String> s = new ArrayList<>(NAMED_TIMES.keySet());
-                s.add("reset");
-                return SharedSuggestionProvider.suggest(s, b);
-            }).executes(exec(ctx -> set(ctx, self(ctx))))
-                    .then(playerArg("player").requires(src -> has(src, "others", Perms.OP))
-                            .executes(exec(ctx -> set(ctx, online(ctx, "player"))))));
-        }
-
-        private int set(CommandContext<CommandSourceStack> ctx, ServerPlayer p) {
-            String input = str(ctx, "time");
-            if (input.equalsIgnoreCase("reset") || input.equalsIgnoreCase("normal")) {
-                playerTime.remove(p.getUUID());
-                sendTime(p);
-                p.sendSystemMessage(Messages.get("ptime.reset"));
-                tellOther(ctx, p, Messages.get("ptime.resetOther", p.getDisplayName()));
-                return 1;
-            }
-            OptionalLong t = parseTime(input);
-            if (t.isEmpty()) return fail(ctx, Messages.get("time.invalid", input));
-            playerTime.put(p.getUUID(), Math.floorMod(t.getAsLong(), 24000L));
-            sendTime(p);
-            p.sendSystemMessage(Messages.get("ptime.set", describe(t.getAsLong())));
-            tellOther(ctx, p, Messages.get("ptime.setOther", p.getDisplayName(), describe(t.getAsLong())));
             return 1;
         }
     }
@@ -400,40 +306,6 @@ public final class WorldCommands {
             boolean on = BoolArgumentType.getBool(ctx, "on");
             setWeather(ctx.getSource().getServer().overworld(), on ? "thunder" : "clear", durationTicks(duration));
             reply(ctx, Messages.get(on ? "weather.thunder" : "weather.clear"));
-            return 1;
-        }
-    }
-
-    /** /pweather <clear|storm|reset> [player]: the weather only this player sees. */
-    static final class PWeather extends EssCommand {
-        PWeather() {
-            super("pweather", Perms.OP, "epweather", "playerweather", "eplayerweather");
-        }
-
-        @Override
-        protected void build(LiteralArgumentBuilder<CommandSourceStack> root) {
-            root.then(Commands.argument("weather", StringArgumentType.word())
-                    .suggests((c, b) -> SharedSuggestionProvider.suggest(List.of("clear", "storm", "reset"), b))
-                    .executes(exec(ctx -> set(ctx, self(ctx))))
-                    .then(playerArg("player").requires(src -> has(src, "others", Perms.OP))
-                            .executes(exec(ctx -> set(ctx, online(ctx, "player"))))));
-        }
-
-        private int set(CommandContext<CommandSourceStack> ctx, ServerPlayer p) {
-            String input = str(ctx, "weather").toLowerCase(Locale.ROOT);
-            if (input.equals("reset") || input.equals("normal")) {
-                playerWeather.remove(p.getUUID());
-                sendWeather(p);
-                p.sendSystemMessage(Messages.get("pweather.reset"));
-                tellOther(ctx, p, Messages.get("pweather.resetOther", p.getDisplayName()));
-                return 1;
-            }
-            String kind = weatherKind(input);
-            if (kind == null) return fail(ctx, Messages.get("weather.unknown", input));
-            playerWeather.put(p.getUUID(), !kind.equals("clear"));
-            sendWeather(p);
-            p.sendSystemMessage(Messages.get("pweather.set", Messages.get("weather.name." + (kind.equals("clear") ? "clear" : "storm"))));
-            tellOther(ctx, p, Messages.get("pweather.setOther", p.getDisplayName()));
             return 1;
         }
     }

@@ -6,7 +6,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import dev.curatorium.essentials.chat.Chat;
 import dev.curatorium.essentials.command.CommandRegistry;
 import dev.curatorium.essentials.command.EssCommand;
 import dev.curatorium.essentials.config.EssConfig;
@@ -15,13 +14,11 @@ import dev.curatorium.essentials.data.UserStore;
 import dev.curatorium.essentials.menu.ContainerView;
 import dev.curatorium.essentials.menu.InventoryView;
 import dev.curatorium.essentials.menu.Menus;
-import dev.curatorium.essentials.moderation.Mutes;
 import dev.curatorium.essentials.perm.Perms;
 import dev.curatorium.essentials.text.Messages;
 import dev.curatorium.essentials.text.Text;
 import dev.curatorium.essentials.util.Items;
 import dev.curatorium.essentials.util.PlayerLookup;
-import dev.curatorium.essentials.util.Tasks;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,7 +39,6 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.Filterable;
 import net.minecraft.world.InteractionHand;
@@ -72,9 +68,6 @@ import net.minecraft.world.level.block.entity.SignText;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
 
 /** Inventories, items, power tools and signs. */
 public final class ItemCommands {
@@ -93,48 +86,14 @@ public final class ItemCommands {
         CommandRegistry.add(new Repair());
         CommandRegistry.add(new Hat());
         CommandRegistry.add(new Condense());
-        CommandRegistry.add(new Unlimited());
         CommandRegistry.add(new Skull());
         CommandRegistry.add(new Book());
         CommandRegistry.add(new RecipeCommand());
         CommandRegistry.add(new Disposal());
-        CommandRegistry.add(new PowerTool());
-        CommandRegistry.add(new PowerToolList());
-        CommandRegistry.add(new PowerToolToggle());
         CommandRegistry.add(new EditSign());
     }
 
     public static void registerEvents(IEventBus bus) {
-        // /unlimited: put the placed item back next tick.
-        bus.addListener(BlockEvent.EntityPlaceEvent.class, e -> {
-            if (!(e.getEntity() instanceof ServerPlayer p) || p.isCreative()) return;
-            Item item = e.getPlacedBlock().getBlock().asItem();
-            if (!UserStore.get(p).unlimited.contains(Items.id(item))) return;
-            for (InteractionHand hand : InteractionHand.values()) {
-                ItemStack held = p.getItemInHand(hand);
-                if (!held.is(item)) continue;
-                ItemStack before = held.copy();
-                Tasks.later(1, () -> {
-                    ItemStack now = p.getItemInHand(hand);
-                    if (now.isEmpty()) p.setItemInHand(hand, before);
-                    else if (now.is(item) && now.getCount() < before.getCount()) now.setCount(before.getCount());
-                });
-                return;
-            }
-        });
-        bus.addListener(PlayerInteractEvent.RightClickItem.class, e -> {
-            if (e.getEntity() instanceof ServerPlayer p && e.getHand() == InteractionHand.MAIN_HAND && PowerTool.use(p, null)) e.setCanceled(true);
-        });
-        bus.addListener(PlayerInteractEvent.RightClickBlock.class, e -> {
-            if (e.getEntity() instanceof ServerPlayer p && e.getHand() == InteractionHand.MAIN_HAND && PowerTool.use(p, null)) e.setCanceled(true);
-        });
-        bus.addListener(PlayerInteractEvent.LeftClickBlock.class, e -> {
-            if (e.getEntity() instanceof ServerPlayer p && e.getAction() == PlayerInteractEvent.LeftClickBlock.Action.START
-                    && PowerTool.use(p, null)) e.setCanceled(true);
-        });
-        bus.addListener(AttackEntityEvent.class, e -> {
-            if (e.getEntity() instanceof ServerPlayer p && PowerTool.use(p, e.getTarget() instanceof ServerPlayer t ? t : null)) e.setCanceled(true);
-        });
     }
 
     /** After /essentials reload: recipes may have changed. */
@@ -699,54 +658,6 @@ public final class ItemCommands {
 
     // ---------------------------------------------------------------- unlimited
 
-    /** /unlimited <item|list|clear> [player]: placing that block never uses it up. */
-    static final class Unlimited extends EssCommand {
-        Unlimited() {
-            super("unlimited", Perms.ADMIN, "eunlimited", "ul", "unl", "eul", "eunl");
-        }
-
-        @Override
-        protected void build(LiteralArgumentBuilder<CommandSourceStack> root) {
-            root.then(Commands.literal("list").executes(exec(ctx -> list(ctx, self(ctx))))
-                            .then(playerArg("player").requires(src -> has(src, "others", Perms.ADMIN))
-                                    .executes(exec(ctx -> list(ctx, online(ctx, "player"))))))
-                    .then(Commands.literal("clear").executes(exec(ctx -> clear(ctx, self(ctx))))
-                            .then(playerArg("player").requires(src -> has(src, "others", Perms.ADMIN))
-                                    .executes(exec(ctx -> clear(ctx, online(ctx, "player"))))))
-                    .then(Commands.argument("item", ItemArgument.item(buildContext()))
-                            .executes(exec(ctx -> toggle(ctx, self(ctx))))
-                            .then(playerArg("player").requires(src -> has(src, "others", Perms.ADMIN))
-                                    .executes(exec(ctx -> toggle(ctx, online(ctx, "player"))))));
-        }
-
-        private int list(CommandContext<CommandSourceStack> ctx, ServerPlayer p) {
-            var set = UserStore.get(p).unlimited;
-            reply(ctx, set.isEmpty() ? Messages.get("unlimited.none", p.getDisplayName())
-                    : Messages.get("unlimited.list", p.getDisplayName(), String.join(", ", set)));
-            return 1;
-        }
-
-        private int clear(CommandContext<CommandSourceStack> ctx, ServerPlayer p) {
-            UserData d = UserStore.get(p);
-            d.unlimited.clear();
-            d.markDirty();
-            reply(ctx, Messages.get("unlimited.cleared", p.getDisplayName()));
-            return 1;
-        }
-
-        private int toggle(CommandContext<CommandSourceStack> ctx, ServerPlayer p) {
-            Item item = ItemArgument.getItem(ctx, "item").getItem();
-            if (!(item instanceof net.minecraft.world.item.BlockItem)) return fail(ctx, Messages.get("unlimited.blocksOnly"));
-            UserData d = UserStore.get(p);
-            String id = Items.id(item);
-            boolean on = d.unlimited.add(id);
-            if (!on) d.unlimited.remove(id);
-            d.markDirty();
-            reply(ctx, Messages.get(on ? "unlimited.on" : "unlimited.off", new ItemStack(item).getHoverName(), p.getDisplayName()));
-            return 1;
-        }
-    }
-
     // ---------------------------------------------------------------- skull, book
 
     /** /skull [player]: a player head (yours without a name). */
@@ -875,136 +786,6 @@ public final class ItemCommands {
     }
 
     // ---------------------------------------------------------------- power tools
-
-    /**
-     * /powertool [command]: binds commands to the held item type; using it (right click, or left
-     * click on a block or entity) runs them as you. {@code {player}} is replaced by the player you
-     * hit. Prefixes: none = replace, {@code a:} append, {@code r:} remove, {@code l:} list,
-     * {@code d:} remove all power tools, {@code c:} make the command chat instead. No argument
-     * clears the held item.
-     */
-    static final class PowerTool extends EssCommand {
-        private static final Map<UUID, Long> lastUse = new ConcurrentHashMap<>();
-
-        PowerTool() {
-            super("powertool", Perms.OP, "epowertool", "pt", "ept");
-        }
-
-        @Override
-        protected void build(LiteralArgumentBuilder<CommandSourceStack> root) {
-            root.executes(exec(ctx -> {
-                ServerPlayer me = self(ctx);
-                ItemStack stack = held(me);
-                UserData d = UserStore.get(me);
-                if (d.powertools.remove(Items.id(stack)) == null) return fail(ctx, Messages.get("powertool.noneOnItem", itemName(stack)));
-                d.markDirty();
-                reply(ctx, Messages.get("powertool.cleared", itemName(stack)));
-                return 1;
-            })).then(textArg("command").executes(exec(ctx -> {
-                ServerPlayer me = self(ctx);
-                UserData d = UserStore.get(me);
-                String text = str(ctx, "command").trim();
-                if (text.equalsIgnoreCase("d:")) {
-                    d.powertools.clear();
-                    d.markDirty();
-                    reply(ctx, Messages.get("powertool.clearedAll"));
-                    return 1;
-                }
-                ItemStack stack = held(me);
-                String id = Items.id(stack);
-                List<String> cmds = d.powertools.computeIfAbsent(id, k -> new ArrayList<>());
-                if (text.equalsIgnoreCase("l:")) {
-                    reply(ctx, cmds.isEmpty() ? Messages.get("powertool.noneOnItem", itemName(stack))
-                            : Messages.get("powertool.list", itemName(stack), String.join(" | ", cmds)));
-                    if (cmds.isEmpty()) d.powertools.remove(id);
-                    return 1;
-                }
-                if (text.regionMatches(true, 0, "r:", 0, 2)) {
-                    String cmd = strip(text.substring(2));
-                    if (!cmds.remove(cmd)) return fail(ctx, Messages.get("powertool.notBound", cmd));
-                    if (cmds.isEmpty()) d.powertools.remove(id);
-                    d.markDirty();
-                    reply(ctx, Messages.get("powertool.removed", cmd, itemName(stack)));
-                    return 1;
-                }
-                boolean append = text.regionMatches(true, 0, "a:", 0, 2);
-                String cmd = strip(append ? text.substring(2) : text);
-                if (cmd.isEmpty()) return fail(ctx, Messages.get("powertool.usage"));
-                if (!append) cmds.clear();
-                cmds.add(cmd);
-                d.markDirty();
-                reply(ctx, Messages.get(append ? "powertool.appended" : "powertool.set", cmd, itemName(stack)));
-                return 1;
-            })));
-        }
-
-        private static String strip(String s) {
-            s = s.trim();
-            return s.startsWith("/") ? s.substring(1) : s;
-        }
-
-        /** Runs the held item's power-tool commands, if any. True if it did (the click is then cancelled). */
-        static boolean use(ServerPlayer p, ServerPlayer hit) {
-            ItemStack stack = p.getMainHandItem();
-            if (stack.isEmpty()) return false;
-            UserData d = UserStore.get(p);
-            if (!d.powertoolsEnabled) return false;
-            List<String> cmds = d.powertools.get(Items.id(stack));
-            if (cmds == null || cmds.isEmpty() || !Perms.has(p, "essentials.powertool", Perms.OP)) return false;
-            long now = System.currentTimeMillis();
-            Long last = lastUse.get(p.getUUID());
-            if (last != null && now - last < 200) return true; // one click can fire several events
-            lastUse.put(p.getUUID(), now);
-            for (String cmd : List.copyOf(cmds)) {
-                if (cmd.contains("{player}")) {
-                    if (hit == null) continue;
-                    cmd = cmd.replace("{player}", hit.getGameProfile().getName());
-                }
-                if (cmd.regionMatches(true, 0, "c:", 0, 2)) {
-                    if (!Mutes.checkMuted(p)) Chat.send(p, cmd.substring(2).trim());
-                } else {
-                    p.server.getCommands().performPrefixedCommand(p.createCommandSourceStack(), cmd);
-                }
-            }
-            return true;
-        }
-    }
-
-    static final class PowerToolList extends EssCommand {
-        PowerToolList() {
-            super("powertoollist", Perms.OP, "epowertoollist", "ptlist", "eptlist");
-        }
-
-        @Override
-        protected void build(LiteralArgumentBuilder<CommandSourceStack> root) {
-            root.executes(exec(ctx -> {
-                UserData d = UserStore.get(self(ctx));
-                if (d.powertools.isEmpty()) {
-                    reply(ctx, Messages.get("powertool.noneAtAll"));
-                    return 1;
-                }
-                for (var e : d.powertools.entrySet()) reply(ctx, Messages.get("powertool.entry", e.getKey(), String.join(" | ", e.getValue())));
-                return 1;
-            }));
-        }
-    }
-
-    static final class PowerToolToggle extends EssCommand {
-        PowerToolToggle() {
-            super("powertooltoggle", Perms.OP, "epowertooltoggle", "ptt", "eptt", "pttoggle", "epttoggle");
-        }
-
-        @Override
-        protected void build(LiteralArgumentBuilder<CommandSourceStack> root) {
-            root.executes(exec(ctx -> {
-                UserData d = UserStore.get(self(ctx));
-                d.powertoolsEnabled = !d.powertoolsEnabled;
-                d.markDirty();
-                reply(ctx, Messages.get("powertool.toggle", StateCommands.state(d.powertoolsEnabled)));
-                return 1;
-            }));
-        }
-    }
 
     // ---------------------------------------------------------------- editsign
 

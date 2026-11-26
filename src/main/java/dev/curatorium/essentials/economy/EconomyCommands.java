@@ -108,6 +108,15 @@ public final class EconomyCommands {
                 if (to.uuid().equals(me.getUUID())) return fail(ctx, Messages.get("pay.self"));
                 long spurs = amount(str(ctx, "amount"));
                 if (spurs < EssConfig.PAY_MIN.get()) return fail(ctx, Messages.get("pay.tooSmall", Money.format(EssConfig.PAY_MIN.get())));
+                int range = EssConfig.PAY_RANGE.get();
+                // Staff (essentials.pay.bypassrange) can pay anyone, anywhere, online or not.
+                if (range > 0 && !Perms.has(me, "essentials.pay.bypassrange", Perms.OP)) {
+                    ServerPlayer other = to.online();
+                    if (other == null || !dev.curatorium.essentials.player.Vanish.canSee(me, other) || other.level() != me.level()) {
+                        return fail(ctx, Messages.get("pay.notHere", to.name(), range));
+                    }
+                    if (other.distanceToSqr(me) > (double) range * range) return fail(ctx, Messages.get("pay.tooFar", to.name(), range));
+                }
                 UserData target = UserStore.get(to.uuid());
                 if (!target.acceptPayments) return fail(ctx, Messages.get("pay.refused", to.name()));
                 if (!Wallet.canAfford(me, spurs)) return fail(ctx, Messages.get("pay.cantAfford", Money.format(spurs)));

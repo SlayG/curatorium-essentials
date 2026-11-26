@@ -54,6 +54,10 @@ public final class EssConfig {
         PAY_CONFIRM = b.comment("/pay asks you to run it again to confirm, unless the player turns this off with /payconfirmtoggle.")
                 .define("payConfirm", false);
         PAY_MIN = b.comment("Smallest /pay, in spurs.").defineInRange("minPay", 1L, 1L, Long.MAX_VALUE / 2);
+        PAY_RANGE = b.comment("/pay only works between players within this many blocks of each other, in the same",
+                "dimension (as Curatorium Exchange does). 0 lifts the limit, which also allows paying offline players.",
+                "Players with essentials.pay.bypassrange (op 2 by default) can pay anyone, anywhere.")
+                .defineInRange("payRange", 20, 0, 100_000);
         SIGN_COLOR = b.comment("Colour code a working shop sign's first line gets, e.g. \"&1\" (dark blue).")
                 .define("signColor", "&1");
         b.pop();
@@ -94,18 +98,16 @@ public final class EssConfig {
 
         b.comment("What players see when they join.").push("join");
         MOTD_ON_JOIN = b.comment("Show motd.txt on join.").define("showMotd", true);
-        MAIL_ON_JOIN = b.comment("Tell players about unread mail on join.").define("notifyMail", true);
         b.pop();
 
         b.push("misc");
         NEAR_RADIUS = b.comment("Default /near radius.").defineInRange("nearRadius", 200, 1, 100_000);
         NEAR_MAX = b.comment("Largest /near radius (unless essentials.near.maxexempt).").defineInRange("nearMaxRadius", 1000, 1, 100_000);
-        MAILS_PER_MINUTE = b.comment("Most mails one player can send per minute.").defineInRange("mailsPerMinute", 5, 1, 1000);
         b.pop();
 
         b.comment("Bans, kicks and mutes.").push("moderation");
         MUTE_BLOCKED = b.comment("Commands a muted player can't use (any name or alias; Essentials' own aliases are",
-                        "matched to their command). /mail send is always blocked while muted.")
+                        "matched to their command).")
                 .defineListAllowEmpty("muteBlockedCommands", List.of("msg", "r", "me", "helpop", "broadcast",
                         "broadcastworld", "say", "teammsg", "tm", "tell", "w"), EssConfig::isString);
         BAN_DEFAULT_REASON = b.comment("Reason used when a ban, kick or mute gives none.")
@@ -114,7 +116,7 @@ public final class EssConfig {
 
         b.comment("Jails (/setjail, /togglejail).").push("jail");
         JAIL_ALLOWED = b.comment("Commands a jailed player may still use. Everything else is blocked.")
-                .defineListAllowEmpty("allowedCommands", List.of("msg", "r", "mail", "helpop", "rules", "motd",
+                .defineListAllowEmpty("allowedCommands", List.of("msg", "r", "helpop", "rules", "motd",
                         "list", "help", "afk", "togglejail", "ping", "playtime"), EssConfig::isString);
         JAIL_ONLINE_TIME = b.comment("Timed jail sentences only count down while the player is online.")
                 .define("countOnlineTimeOnly", false);
@@ -194,6 +196,7 @@ public final class EssConfig {
     public static final ModConfigSpec.LongValue STARTING_COINS;
     public static final ModConfigSpec.BooleanValue PAY_CONFIRM;
     public static final ModConfigSpec.LongValue PAY_MIN;
+    public static final ModConfigSpec.IntValue PAY_RANGE;
     public static final ModConfigSpec.ConfigValue<String> SIGN_COLOR;
     public static final ModConfigSpec.IntValue TP_WARMUP;
     public static final ModConfigSpec.BooleanValue TP_CANCEL_MOVE;
@@ -260,10 +263,8 @@ public final class EssConfig {
     public static final ModConfigSpec.IntValue AFK_KICK;
     public static final ModConfigSpec.BooleanValue AFK_BROADCAST;
     public static final ModConfigSpec.BooleanValue MOTD_ON_JOIN;
-    public static final ModConfigSpec.BooleanValue MAIL_ON_JOIN;
     public static final ModConfigSpec.IntValue NEAR_RADIUS;
     public static final ModConfigSpec.IntValue NEAR_MAX;
-    public static final ModConfigSpec.IntValue MAILS_PER_MINUTE;
 
     private static Map<String, String> groupFormats = Map.of();
 

@@ -12,14 +12,11 @@ import dev.curatorium.essentials.perm.Perms;
 import dev.curatorium.essentials.text.Messages;
 import dev.curatorium.essentials.util.Tasks;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
@@ -58,7 +55,6 @@ public final class FunCommands {
         CommandRegistry.add(new KittyCannon());
         CommandRegistry.add(new Fireball());
         CommandRegistry.add(new Firework());
-        CommandRegistry.add(new Nuke());
         CommandRegistry.add(new Antioch());
         CommandRegistry.add(new Ice());
         CommandRegistry.add(new Break());
@@ -231,39 +227,6 @@ public final class FunCommands {
             stack.set(DataComponents.FIREWORKS, new Fireworks(1 + r.nextInt(2), List.of(
                     new FireworkExplosion(shapes[r.nextInt(shapes.length)], c, fade, r.nextBoolean(), r.nextBoolean()))));
             return stack;
-        }
-    }
-
-    /** /nuke [players]: rains primed TNT around the players (everyone if none are named). */
-    static final class Nuke extends EssCommand {
-        Nuke() {
-            super("nuke", Perms.ADMIN, "enuke");
-        }
-
-        @Override
-        protected void build(LiteralArgumentBuilder<CommandSourceStack> root) {
-            root.executes(exec(ctx -> nuke(ctx, ctx.getSource().getServer().getPlayerList().getPlayers())))
-                    .then(Commands.argument("players", EntityArgument.players())
-                            .executes(exec(ctx -> nuke(ctx, EntityArgument.getPlayers(ctx, "players")))));
-        }
-
-        private int nuke(CommandContext<CommandSourceStack> ctx, Collection<ServerPlayer> targets) {
-            int n = 0;
-            for (ServerPlayer p : new ArrayList<>(targets)) {
-                if (Perms.has(p, "essentials.nuke.exempt", Perms.ADMIN) && p != ctx.getSource().getPlayer()) continue;
-                p.sendSystemMessage(Messages.get("nuke.incoming"));
-                for (int x = -10; x <= 10; x += 5) {
-                    for (int z = -10; z <= 10; z += 5) {
-                        PrimedTnt tnt = new PrimedTnt(p.level(), p.getX() + x, Math.min(p.getY() + 20, p.level().getMaxBuildHeight() - 1),
-                                p.getZ() + z, null);
-                        tnt.setFuse(60);
-                        p.level().addFreshEntity(tnt);
-                    }
-                }
-                n++;
-            }
-            reply(ctx, Messages.get("nuke.done", n));
-            return 1;
         }
     }
 

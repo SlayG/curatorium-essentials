@@ -11,6 +11,10 @@ What's done and what's next: [PLAN.md](PLAN.md).
 
 ## Status
 
+**0.8.0, Phase 7 (cleanup).** Checked against EssentialsX's full command list: `/ext` and
+`/potion` added; `/nuke`, `/powertool` (and `/ptlist`, `/ptt`), `/ptime`, `/pweather`, `/mail` and
+`/unlimited` removed (mail is handled by Curatorium Claims); `/pay` limited to 20 blocks.
+
 **0.7.0, Phase 6 (Discord Link).** `/link` and `/unlink` tie a Minecraft account to a Discord
 account; Discord roles and LuckPerms groups sync per configured pair; optional nickname sync and
 "must link to join".
@@ -22,7 +26,8 @@ chosen roles, the slash commands `/list`, `/msg` and `/execute`, and `/discord` 
 `/discordbroadcast` in game. It needs a bot of your own; see [Discord setup](#discord-setup).
 
 **0.5.0, Phase 4 (economy).** Money is the Numismatics coins players carry: `/balance`, `/pay`
-(with change, and held until the next login for offline players), `/eco give|take`, kit and
+(only to players within 20 blocks, as with Curatorium Exchange), `/eco give|take` (held until
+the next login for offline players), kit and
 command prices, starting coins, and EssentialsX sign shops on vanilla signs (`[Buy]`, `[Sell]`, `[Trade]`, `[Kit]`, `[Warp]`, `[Heal]` and more).
 
 **0.4.0, Phase 3 (teleports and spawn).** Direct teleports (vanilla-compatible `/tp`), requests with
@@ -35,7 +40,7 @@ teleport is op-only by default.
 works), mutes, jails, vanish, god/fly/gamemode/heal and the other player commands, `/invsee`,
 item commands, power tools, portable workstations, time and weather (also per player), world
 tools and kits with a GUI picker. Phase 1 brought EssentialsX Chat, nicknames, AFK, private
-messages, mail and the info commands. Teleports, the economy and Discord arrive in later phases.
+messages and the info commands. Teleports, the economy and Discord arrive in later phases.
 
 ## Installing
 
@@ -53,7 +58,7 @@ is optional; without it, the economy is off. Nothing goes in the client pack.
 | `config/curatorium_essentials/motd.txt`, `rules.txt`, `info.txt`, `custom.txt` | Text for `/motd` (also shown on join), `/rules`, `/info` and `/customtext`. Lines starting with `#` start a chapter. |
 | `config/curatorium_essentials/config.toml` moderation, jail, items, world, kits sections | Mute-blocked commands, jail rules (allowed commands, radius, online-time sentences), item blacklist, `/clearinventory` confirmation, `/spawnmob` limit, the `/backup` script, the first-join kit. |
 | `config/curatorium_essentials/config.toml` teleport, homes, warps, spawn, tpr sections | Warmup, cooldown, safe spots, request timeout, home limits per group, per-warp permissions, first-join and respawn spawn, random-teleport range. |
-| `config/curatorium_essentials/config.toml` economy section | Ender chest counting, starting coins, `/pay` confirmation and minimum, the shop-sign colour. |
+| `config/curatorium_essentials/config.toml` economy section | Ender chest counting, starting coins, `/pay` confirmation, minimum and range, the shop-sign colour. |
 | `config/curatorium_essentials/discord.toml` | The Discord bot: token, server and channel IDs, where each message type goes, webhook and avatar, command roles, status, invite link, and linking (role and group pairs, nickname sync, must link to join). Restarts the bot by itself when the token changes. Keep it private. |
 | `<world>/curatorium_essentials/` | Player data (`userdata/<uuid>.json`, homes and held coins included), `jails.json`, `kits.json`, `warps.json`, `spawns.json`, `tpr.json`, `discord-links.json`. |
 | `logs/curatorium_essentials-economy.log` | Every coin taken or given by the mod. |
