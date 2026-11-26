@@ -203,3 +203,11 @@ lp group default permission set essentials.spawn true
 Who can run server commands from Discord (`/execute` and the console channel) isn't a LuckPerms
 node: it's the Discord roles listed in `commandRoles` in `discord.toml`. Discord staff-channel
 messages reach players with `essentials.helpop.receive`.
+
+## Nodes (0.7.0: Discord Link)
+
+| Node | What it allows | Default |
+|---|---|---|
+| `essentials.link`, `essentials.unlink` | Linking and unlinking your own account | everyone |
+| `essentials.unlink.others` | `/unlink <player>` | op 2 |
+| `essentials.link.bypass` | Joining without linking when `link.required` is on | op 4 |

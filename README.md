@@ -11,6 +11,10 @@ What's done and what's next: [PLAN.md](PLAN.md).
 
 ## Status
 
+**0.7.0, Phase 6 (Discord Link).** `/link` and `/unlink` tie a Minecraft account to a Discord
+account; Discord roles and LuckPerms groups sync per configured pair; optional nickname sync and
+"must link to join".
+
 **0.6.0, Phase 5 (Discord).** A Discord bot in the server: two-way chat relay (player heads as
 webhook avatars), join/leave/death/advancement/start/stop and moderation messages routed per type,
 a staff channel for `/helpop`, a console channel streaming the log and taking commands from
@@ -50,8 +54,8 @@ is optional; without it, the economy is off. Nothing goes in the client pack.
 | `config/curatorium_essentials/config.toml` moderation, jail, items, world, kits sections | Mute-blocked commands, jail rules (allowed commands, radius, online-time sentences), item blacklist, `/clearinventory` confirmation, `/spawnmob` limit, the `/backup` script, the first-join kit. |
 | `config/curatorium_essentials/config.toml` teleport, homes, warps, spawn, tpr sections | Warmup, cooldown, safe spots, request timeout, home limits per group, per-warp permissions, first-join and respawn spawn, random-teleport range. |
 | `config/curatorium_essentials/config.toml` economy section | Ender chest counting, starting coins, `/pay` confirmation and minimum, the shop-sign colour. |
-| `config/curatorium_essentials/discord.toml` | The Discord bot: token, server and channel IDs, where each message type goes, webhook and avatar, command roles, status, invite link. Restarts the bot by itself when the token changes. Keep it private. |
-| `<world>/curatorium_essentials/` | Player data (`userdata/<uuid>.json`, homes and held coins included), `jails.json`, `kits.json`, `warps.json`, `spawns.json`, `tpr.json`. |
+| `config/curatorium_essentials/discord.toml` | The Discord bot: token, server and channel IDs, where each message type goes, webhook and avatar, command roles, status, invite link, and linking (role and group pairs, nickname sync, must link to join). Restarts the bot by itself when the token changes. Keep it private. |
+| `<world>/curatorium_essentials/` | Player data (`userdata/<uuid>.json`, homes and held coins included), `jails.json`, `kits.json`, `warps.json`, `spawns.json`, `tpr.json`, `discord-links.json`. |
 | `logs/curatorium_essentials-economy.log` | Every coin taken or given by the mod. |
 
 ## Discord setup
@@ -65,6 +69,9 @@ is optional; without it, the economy is off. Nothing goes in the client pack.
    `CURATORIUM_DISCORD_TOKEN` environment variable), your server ID as `guild`, and the chat,
    staff and console channel IDs (Developer Mode on, right-click, Copy ID). Add role IDs to
    `commandRoles` to let those roles run commands. Saving the file starts the bot.
+
+For role sync, give the bot Manage Roles and put its role above the synced roles; for nickname
+sync, Manage Nicknames. Turning on `link.memberIntent` needs the **Server Members Intent** on the Bot page.
 
 Use text channels rather than threads: Discord doesn't let webhook messages into threads, and it
 archives quiet ones. The console channel shows players' IP addresses, so keep it staff-only.

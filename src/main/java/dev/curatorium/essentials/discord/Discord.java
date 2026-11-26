@@ -62,7 +62,7 @@ public final class Discord {
     }
 
     private static int fingerprint() {
-        return Objects.hash(DiscordConfig.ENABLED.get(), DiscordConfig.token(), DiscordConfig.GUILD.get());
+        return Objects.hash(DiscordConfig.ENABLED.get(), DiscordConfig.token(), DiscordConfig.GUILD.get(), DiscordConfig.MEMBER_INTENT.get());
     }
 
     public static synchronized void start(MinecraftServer server) {
@@ -76,7 +76,10 @@ public final class Discord {
         ready = false;
         webhooks.clear();
         try {
-            jda = JDABuilder.createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+            EnumSet<GatewayIntent> intents = EnumSet.of(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES);
+            // Role-change events for role sync. Privileged: the developer portal must allow it.
+            if (DiscordConfig.MEMBER_INTENT.get()) intents.add(GatewayIntent.GUILD_MEMBERS);
+            jda = JDABuilder.createLight(token, intents)
                     .addEventListeners(new DiscordListener(server))
                     .build();
         } catch (RuntimeException e) {
@@ -91,6 +94,21 @@ public final class Discord {
             return t;
         });
         timer.scheduleWithFixedDelay(ConsoleStream::flush, 2, 2, TimeUnit.SECONDS);
+        timer.scheduleWithFixedDelay(new Runnable() {
+            private int minutes;
+
+            @Override
+            public void run() {
+                Links.expireCodes();
+                int every = DiscordConfig.RESYNC_MINUTES.get();
+                if (every <= 0 || ++minutes < every || !running()) return;
+                minutes = 0;
+                server.execute(() -> server.getPlayerList().getPlayers().forEach(p -> {
+                    Links.Link link = Links.get(p.getUUID());
+                    if (link != null) RoleSync.full(p.getUUID(), link.discordId(), p.getGameProfile().getName());
+                }));
+            }
+        }, 1, 1, TimeUnit.MINUTES);
         ConsoleStream.install();
     }
 

@@ -220,7 +220,23 @@ jar (~8–10 MB larger).
 - In-game: `discord` (invite link), `discordbroadcast`.
 - Respects vanish, mutes, ignore and the chat filter; mentions limited so players can't ping `@everyone`.
 
-## Phase 6 — Discord Link (0.7.0)
+## Phase 6 — Discord Link (0.7.0) — done
+
+Tested on the dev server with the real Discord server: linking with a code from /link (slash
+command), unlinking, a LuckPerms group giving a Discord role (`groupsToRoles`) and unlinking taking
+it away, and "must link to join" refusing an unlinked bot player at login with its code. Not tested
+yet: a Discord role putting a player in a group (`rolesToGroups`), linking by direct message,
+nickname sync, the member intent, and the 10-minute resync.
+
+Notes from building it:
+- Settings are in the `[link]` section of `discord.toml`. Each map goes one way: `rolesToGroups` (the role decides the group) and `groupsToRoles` (the group decides the role). A pair in both: Discord wins on join.
+- Without the Server Members Intent (`memberIntent = false`, the default), Discord role changes are picked up on link, on join and every `resyncMinutes`; LuckPerms changes reach Discord at once either way.
+- Codes are 6 characters without look-alikes (0/O, 1/I/L), last `codeMinutes`, and are refused if either account is already linked.
+- "Must link to join" refuses at login, before the join message, and lets everyone in while the bot is offline; op 4 or `essentials.link.bypass` skips it.
+- Discord never lets a bot rename the server owner, so nickname sync skips them.
+- LuckPerms over RCON on the dev server logs commands but doesn't always save them; grant permissions in game, or in the database while the server is stopped.
+
+Planned:
 
 - `/link` in game gives a short code; the player runs `/link <code>` in Discord (or DMs the bot). `/unlink` either side.
 - Role sync both ways between Discord roles and LuckPerms groups (configured map), on link, join and role change.

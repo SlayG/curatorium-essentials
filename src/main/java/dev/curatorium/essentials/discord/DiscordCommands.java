@@ -30,10 +30,14 @@ public final class DiscordCommands {
     public static void register() {
         CommandRegistry.add(new DiscordInvite());
         CommandRegistry.add(new DiscordBroadcast());
+        CommandRegistry.add(new LinkCommand());
+        CommandRegistry.add(new UnlinkCommand());
     }
 
     public static void registerEvents(IEventBus bus) {
-        bus.addListener(ServerStartedEvent.class, e -> {
+        // LOW: after LuckPerms is hooked up (Perms.onServerStarted), which role sync needs.
+        bus.addListener(EventPriority.LOW, ServerStartedEvent.class, e -> {
+            Links.load();
             Discord.start(e.getServer());
             Discord.send("start", Discord.fill("discord.out.start"));
         });
@@ -43,6 +47,11 @@ public final class DiscordCommands {
             if (!(e.getEntity() instanceof ServerPlayer p)) return;
             if (!Vanish.isVanished(p)) joined(p, true);
             Tasks.later(1, () -> Discord.updateStatus(p.server));
+            Links.Link link = Links.get(p.getUUID());
+            if (link != null) {
+                Links.rename(p.getUUID(), p.getGameProfile().getName());
+                if (Discord.running()) RoleSync.full(p.getUUID(), link.discordId(), p.getGameProfile().getName());
+            }
         });
         bus.addListener(PlayerEvent.PlayerLoggedOutEvent.class, e -> {
             if (!(e.getEntity() instanceof ServerPlayer p)) return;
@@ -86,6 +95,73 @@ public final class DiscordCommands {
             default -> null;
         };
         if (type != null) Discord.send(type, Discord.fill("discord.out.staff", Discord.escape(message.getString())));
+    }
+
+    /**
+     * For the login mixin: the kick message for a player who must link first, or null to let
+     * them in. Nobody is kept out while the bot is offline, or with essentials.link.bypass.
+     */
+    public static Component mustLink(net.minecraft.server.MinecraftServer server, com.mojang.authlib.GameProfile profile) {
+        if (!DiscordConfig.LINK_REQUIRED.get() || !Discord.running() || Links.get(profile.getId()) != null) return null;
+        Boolean bypass = Perms.luckPermsActive() ? dev.curatorium.essentials.perm.LuckPermsGroups.check(profile.getId(), "essentials.link.bypass") : null;
+        if (bypass == null) bypass = server.getProfilePermissions(profile) >= Perms.ADMIN;
+        if (bypass) return null;
+        return Messages.get("link.kick", Links.codeFor(profile.getId(), profile.getName()));
+    }
+
+    /** /link: a code to enter in Discord, or which account you're linked to. */
+    static final class LinkCommand extends EssCommand {
+        LinkCommand() {
+            super("link", Perms.ALL, "elink", "discordlink");
+        }
+
+        @Override
+        protected void build(LiteralArgumentBuilder<CommandSourceStack> root) {
+            root.executes(exec(ctx -> {
+                ServerPlayer me = self(ctx);
+                Links.Link link = Links.get(me.getUUID());
+                if (link != null) {
+                    reply(ctx, Messages.get("link.already", link.discordName));
+                    return 1;
+                }
+                if (!Discord.running()) return fail(ctx, Messages.get("discord.notRunning"));
+                String code = Links.codeFor(me.getUUID(), me.getGameProfile().getName());
+                Component shown = Component.literal(code).withStyle(s -> s
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, code))
+                        .withHoverEvent(new net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT,
+                                Messages.get("link.copy"))));
+                reply(ctx, Messages.get("link.code", shown, DiscordConfig.CODE_MINUTES.get()));
+                return 1;
+            }));
+        }
+    }
+
+    /** /unlink, /unlink <player> (essentials.unlink.others). */
+    static final class UnlinkCommand extends EssCommand {
+        UnlinkCommand() {
+            super("unlink", Perms.ALL, "eunlink", "discordunlink");
+        }
+
+        @Override
+        protected void build(LiteralArgumentBuilder<CommandSourceStack> root) {
+            root.executes(exec(ctx -> {
+                ServerPlayer me = self(ctx);
+                return unlink(ctx, me.getUUID(), null);
+            }));
+            root.then(playerArg("player").requires(s -> has(s, "others", Perms.OP)).executes(exec(ctx -> {
+                var target = known(ctx, str(ctx, "player"));
+                return unlink(ctx, target.uuid(), target.name());
+            })));
+        }
+
+        private static int unlink(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx, java.util.UUID player, String other) {
+            Links.Link link = Links.unlink(player);
+            if (link == null) return fail(ctx, other == null ? Messages.get("unlink.none") : Messages.get("unlink.noneOther", other));
+            RoleSync.onUnlinked(player, link.discordId());
+            Discord.LOG.info("Discord: {} unlinked from {}", link.name, link.discordName);
+            reply(ctx, other == null ? Messages.get("unlink.done", link.discordName) : Messages.get("unlink.doneOther", other, link.discordName));
+            return 1;
+        }
     }
 
     /** /discord: the invite link. */

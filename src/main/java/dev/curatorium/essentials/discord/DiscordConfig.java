@@ -29,6 +29,14 @@ public final class DiscordConfig {
     public static final ModConfigSpec.ConfigValue<List<? extends String>> COMMAND_ROLES;
     public static final ModConfigSpec.ConfigValue<String> STATUS;
     public static final ModConfigSpec.ConfigValue<String> INVITE;
+    public static final ModConfigSpec.BooleanValue LINK_REQUIRED;
+    public static final ModConfigSpec.IntValue CODE_MINUTES;
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> ROLES_TO_GROUPS;
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> GROUPS_TO_ROLES;
+    public static final ModConfigSpec.BooleanValue MEMBER_INTENT;
+    public static final ModConfigSpec.IntValue RESYNC_MINUTES;
+    public static final ModConfigSpec.BooleanValue SYNC_NICKNAMES;
+    public static final ModConfigSpec.BooleanValue REMOVE_ON_UNLINK;
 
     /** Every kind of message the mod sends to Discord, with the channel it goes to by default. */
     static final List<String> DEFAULT_TYPES = List.of(
@@ -78,7 +86,60 @@ public final class DiscordConfig {
         STATUS = b.comment("The bot's status. {online} and {max} are filled in. Empty for none.").define("status", "{online} players online");
         INVITE = b.comment("Invite link shown by /discord in game.").define("inviteUrl", "");
         b.pop();
+
+        b.comment("Linking Minecraft and Discord accounts: /link in game gives a code, which the player",
+                "enters with /link in Discord or sends to the bot in a direct message.").push("link");
+        LINK_REQUIRED = b.comment("Players must link before they can join; the kick message gives them their code.",
+                "Players with essentials.link.bypass (op 4 by default) join anyway. While the bot is offline, nobody is kept out.")
+                .define("required", false);
+        CODE_MINUTES = b.comment("How long a link code works.").defineInRange("codeMinutes", 10, 1, 1440);
+        ROLES_TO_GROUPS = b.comment("Discord roles that put linked players in a LuckPerms group, as \"<role id>=<group>\".",
+                "Losing the role takes them out of the group again.")
+                .defineListAllowEmpty("rolesToGroups", List.of(), () -> "", o -> o instanceof String s && s.contains("="));
+        GROUPS_TO_ROLES = b.comment("LuckPerms groups that give linked players a Discord role, as \"<group>=<role id>\".",
+                "Leaving the group takes the role away again. The bot needs Manage Roles, and its role must be above these.",
+                "If a pair is in both lists, Discord wins when a player joins.")
+                .defineListAllowEmpty("groupsToRoles", List.of(), () -> "", o -> o instanceof String s && s.contains("="));
+        MEMBER_INTENT = b.comment("Sync the moment someone's Discord roles change. Needs the Server Members Intent turned on",
+                "(Bot page in the developer portal); without it, roles are checked on link, on join and every resyncMinutes.")
+                .define("memberIntent", false);
+        RESYNC_MINUTES = b.comment("How often online linked players' Discord roles are checked again. 0 turns it off.")
+                .defineInRange("resyncMinutes", 10, 0, 1440);
+        SYNC_NICKNAMES = b.comment("Set linked players' Discord nickname to their Minecraft name. Needs Manage Nicknames;",
+                "the server owner and members above the bot can't be renamed.").define("syncNicknames", false);
+        REMOVE_ON_UNLINK = b.comment("Unlinking takes away the synced groups and roles.").define("removeOnUnlink", true);
+        b.pop();
         SPEC = b.build();
+    }
+
+    /** role id -> group */
+    static Map<Long, String> rolesToGroups() {
+        Map<Long, String> out = new HashMap<>();
+        for (String s : ROLES_TO_GROUPS.get()) {
+            int i = s.indexOf('=');
+            long id = parseId(s.substring(0, i));
+            if (id != 0) out.put(id, s.substring(i + 1).trim().toLowerCase(Locale.ROOT));
+        }
+        return out;
+    }
+
+    /** group -> role id */
+    static Map<String, Long> groupsToRoles() {
+        Map<String, Long> out = new HashMap<>();
+        for (String s : GROUPS_TO_ROLES.get()) {
+            int i = s.indexOf('=');
+            long id = parseId(s.substring(i + 1));
+            if (id != 0) out.put(s.substring(0, i).trim().toLowerCase(Locale.ROOT), id);
+        }
+        return out;
+    }
+
+    static long parseId(String s) {
+        try {
+            return Long.parseUnsignedLong(s.trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     static String token() {

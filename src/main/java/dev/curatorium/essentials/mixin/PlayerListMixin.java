@@ -11,7 +11,9 @@ import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.players.PlayerList;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Vanish at login: the join message and the tab-list entries only go to players who may see a
@@ -42,5 +44,14 @@ abstract class PlayerListMixin {
         for (ServerPlayer p : list.getPlayers()) {
             if (Vanish.canSee(p, player)) p.connection.send(packet);
         }
+    }
+
+    /** Discord Link's "must link to join": refused before the player is placed, so no join message shows. */
+    @Inject(method = "canPlayerLogin", at = @At("RETURN"), cancellable = true)
+    private void essentials$mustLink(java.net.SocketAddress address, com.mojang.authlib.GameProfile profile,
+                                     CallbackInfoReturnable<Component> cir) {
+        if (cir.getReturnValue() != null) return;
+        Component kick = dev.curatorium.essentials.discord.DiscordCommands.mustLink(((PlayerList) (Object) this).getServer(), profile);
+        if (kick != null) cir.setReturnValue(kick);
     }
 }

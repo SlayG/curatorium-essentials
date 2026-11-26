@@ -50,7 +50,10 @@ final class DiscordListener extends ListenerAdapter {
                         .addOption(OptionType.STRING, "command", "The command, without the /", true),
                 Commands.slash("msg", "Send a private message to a player in game")
                         .addOption(OptionType.STRING, "player", "Their Minecraft name", true)
-                        .addOption(OptionType.STRING, "message", "What to say", true));
+                        .addOption(OptionType.STRING, "message", "What to say", true),
+                Commands.slash("link", "Link your Minecraft account (run /link in game for a code)")
+                        .addOption(OptionType.STRING, "code", "The code /link gave you in game", true),
+                Commands.slash("unlink", "Unlink your Minecraft account"));
         String guildId = DiscordConfig.GUILD.get().trim();
         Guild guild = guildId.isEmpty() ? null : e.getJDA().getGuildById(guildId);
         if (guild != null) {
@@ -79,14 +82,24 @@ final class DiscordListener extends ListenerAdapter {
             Discord.LOG.warn("Discord: the console channel is also the chat or staff channel; messages there are taken as commands, not chat");
         }
         Discord.onReady();
-        server.execute(() -> Discord.updateStatus(server));
+        server.execute(() -> {
+            Discord.updateStatus(server);
+            RoleSync.subscribe();
+            // Catch up on what changed while the bot was away.
+            server.getPlayerList().getPlayers().forEach(p -> {
+                Links.Link link = Links.get(p.getUUID());
+                if (link != null) RoleSync.full(p.getUUID(), link.discordId(), p.getGameProfile().getName());
+            });
+        });
     }
 
     @Override
     public void onShutdown(ShutdownEvent e) {
         CloseCode code = e.getCloseCode();
         if (code == CloseCode.DISALLOWED_INTENTS) {
-            Discord.LOG.error("Discord refused the login: turn on the Message Content Intent on the bot's page in the developer portal");
+            Discord.LOG.error(DiscordConfig.MEMBER_INTENT.get()
+                    ? "Discord refused the login: turn on the Message Content Intent and the Server Members Intent on the bot's page in the developer portal (or set link.memberIntent = false)"
+                    : "Discord refused the login: turn on the Message Content Intent on the bot's page in the developer portal");
         } else if (code == CloseCode.AUTHENTICATION_FAILED) {
             Discord.LOG.error("Discord refused the login: the bot token is wrong (reset it and paste the new one)");
         } else if (code != null && code != CloseCode.GRACEFUL_CLOSE) {
@@ -98,6 +111,12 @@ final class DiscordListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent e) {
+        if (!e.isFromGuild() && !e.getAuthor().isBot()) {
+            // A direct message: taken as a link code.
+            String code = e.getMessage().getContentRaw().trim();
+            if (!code.isEmpty()) e.getChannel().sendMessage(link(code, e.getAuthor())).queue(null, err -> { });
+            return;
+        }
         if (!e.isFromGuild() || e.getAuthor().isBot() || e.isWebhookMessage() || e.getMember() == null) return;
         long ch = e.getChannel().getIdLong();
         Message msg = e.getMessage();
@@ -153,8 +172,64 @@ final class DiscordListener extends ListenerAdapter {
             case "list" -> list(e);
             case "execute" -> execute(e);
             case "msg" -> msg(e);
+            case "link" -> e.reply(link(e.getOption("code", OptionMapping::getAsString), e.getUser())).setEphemeral(true).queue();
+            case "unlink" -> e.reply(unlink(e.getUser())).setEphemeral(true).queue();
             default -> { }
         }
+    }
+
+    // ------------------------------------------------------------------ linking
+
+    /** Redeems a link code for this Discord user; returns the reply. */
+    private String link(String code, net.dv8tion.jda.api.entities.User user) {
+        Links.Redeemed r = Links.redeem(code, user.getIdLong(), user.getName());
+        if (r.error() != null) {
+            String name = r.link() == null ? "?" : r.link().name;
+            return Discord.fill(r.error(), Discord.escape(name));
+        }
+        java.util.UUID player = r.player();
+        String mcName = r.link().name;
+        Discord.LOG.info("Discord: {} linked to {}", mcName, user.getName());
+        server.execute(() -> {
+            ServerPlayer p = server.getPlayerList().getPlayer(player);
+            if (p != null) p.sendSystemMessage(Messages.get("link.done", user.getName()));
+        });
+        RoleSync.onLinked(player, user.getIdLong(), mcName);
+        return Discord.fill("discord.link.done", Discord.escape(mcName));
+    }
+
+    private String unlink(net.dv8tion.jda.api.entities.User user) {
+        java.util.UUID player = Links.player(user.getIdLong());
+        if (player == null) return Discord.fill("discord.unlink.none");
+        Links.Link link = Links.unlink(player);
+        Discord.LOG.info("Discord: {} unlinked from {}", link.name, user.getName());
+        RoleSync.onUnlinked(player, user.getIdLong());
+        server.execute(() -> {
+            ServerPlayer p = server.getPlayerList().getPlayer(player);
+            if (p != null) p.sendSystemMessage(Messages.get("unlink.fromDiscord", user.getName()));
+        });
+        return Discord.fill("discord.unlink.done", Discord.escape(link.name));
+    }
+
+    // Role changes reach the bot only with the Server Members Intent (link.memberIntent).
+    @Override
+    public void onGuildMemberRoleAdd(net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent e) {
+        rolesChanged(e.getMember().getIdLong(), e.getMember());
+    }
+
+    @Override
+    public void onGuildMemberRoleRemove(net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent e) {
+        rolesChanged(e.getMember().getIdLong(), e.getMember());
+    }
+
+    @Override
+    public void onGuildMemberRemove(net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent e) {
+        if (e.getGuild() == RoleSync.guild()) rolesChanged(e.getUser().getIdLong(), null);
+    }
+
+    private static void rolesChanged(long discordId, Member m) {
+        java.util.UUID player = Links.player(discordId);
+        if (player != null && (m == null || m.getGuild() == RoleSync.guild())) RoleSync.onRolesChanged(player, m);
     }
 
     private void list(SlashCommandInteractionEvent e) {
