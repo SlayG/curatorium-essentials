@@ -211,14 +211,11 @@ final class DiscordListener extends ListenerAdapter {
         return Discord.fill("discord.unlink.done", Discord.escape(link.name));
     }
 
-    // Role changes reach the bot only with the Server Members Intent (link.memberIntent).
+    // Role changes reach the bot only with the Server Members Intent (link.memberIntent). The bot
+    // caches no members, so JDA never fires its role-added/removed events, only this one, which
+    // carries the member's roles as they are now.
     @Override
-    public void onGuildMemberRoleAdd(net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent e) {
-        rolesChanged(e.getMember().getIdLong(), e.getMember());
-    }
-
-    @Override
-    public void onGuildMemberRoleRemove(net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent e) {
+    public void onGuildMemberUpdate(net.dv8tion.jda.api.events.guild.member.GuildMemberUpdateEvent e) {
         rolesChanged(e.getMember().getIdLong(), e.getMember());
     }
 

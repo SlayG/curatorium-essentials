@@ -237,8 +237,12 @@ command), unlinking, a LuckPerms group giving a Discord role (`groupsToRoles`) a
 it away, a Discord role putting a player in a group (`rolesToGroups`), and "must link to join"
 refusing an unlinked bot player at login with its code. The resync was tested with
 `resyncMinutes = 1` by giving and then removing a Discord role through the API: the mapped group
-was added, then removed, each at the next resync. Not tested yet: linking by direct message,
-nickname sync and the member intent.
+was added, then removed, each at the next resync. Linking by direct message tested in Discord.
+With `memberIntent = true` (Server Members Intent on), a role given or taken away through the API
+changed the group at once. That needed a fix: the bot caches no members, so JDA never fires its
+role-added/removed events; it now listens to the member-update event, which always fires. Nickname
+sync stays off on Creatorium (`syncNicknames = false`) and is marked done by decision; it hasn't
+been exercised.
 
 Notes from building it:
 - Settings are in the `[link]` section of `discord.toml`. Each map goes one way: `rolesToGroups` (the role decides the group) and `groupsToRoles` (the group decides the role). A pair in both: Discord wins on join.
