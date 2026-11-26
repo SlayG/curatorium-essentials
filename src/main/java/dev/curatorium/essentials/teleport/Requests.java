@@ -119,7 +119,11 @@ public final class Requests {
         from.sendSystemMessage(Messages.get("tpa.acceptedBy", receiver.getDisplayName()));
         receiver.sendSystemMessage(Messages.get("tpa.accepted", from.getDisplayName()));
         // The destination is where the other player stands now, when the request is accepted.
-        Teleports.go(mover, Location.of(stay), true, Messages.get("tpa.arrived", stay.getDisplayName()));
+        if (!Teleports.go(mover, Location.of(stay), true, Messages.get("tpa.arrived", stay.getDisplayName()))) {
+            // The mover was told why; tell the other one too.
+            stay.sendSystemMessage(Teleports.failedFor(mover));
+            return 0;
+        }
         return 1;
     }
 

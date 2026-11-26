@@ -138,7 +138,10 @@ out of the claim was refused, ops included: /spawn, /home, /tpa (accepted), /tpr
 /tp, /tppos and the console's /tp. With `essentials.teleport.bypass-siege` the bot teleported in
 and out; after `/claims siege stop <owner>` teleports worked again without it. Found and fixed:
 whoever moves someone else (the console, /tp, /tphere, /tpo) now hears why it was refused, not
-just the player.
+just the player. Checked in a second siege: the console's /tp and SlayG's /tphere, /tp and /tpo each
+got "Couldn't teleport Bob: That claim is under siege…". That siege also showed a gap, now fixed:
+when an accepted /tpa or /tpahere was refused, only the player being moved was told; the other
+player now gets the same message. A siege survives a restart and resumes once its area is loaded.
 
 Notes from building it:
 - The siege check reaches Curatorium Claims by reflection, so Essentials builds and runs without it. Nobody has `essentials.teleport.bypass-siege` unless LuckPerms grants it, ops included.
