@@ -105,7 +105,11 @@ public final class TeleportCommands {
                     ctx.getSource().sendFailure(Messages.get("teleport.targetToggled", p.getDisplayName()));
                     continue;
                 }
-                if (move(e, at(dest))) n++;
+                if (!move(e, at(dest))) {
+                    if (e instanceof ServerPlayer p && p != me) ctx.getSource().sendFailure(Teleports.failedFor(p));
+                    continue;
+                }
+                n++;
             }
             if (n == 0) return 0;
             reply(ctx, targets.size() == 1 ? Messages.get("tp.toEntity", targets.iterator().next().getDisplayName(), dest.getDisplayName())
@@ -123,7 +127,11 @@ public final class TeleportCommands {
                     continue;
                 }
                 float yaw = rot == null ? e.getYRot() : rot.y, pitch = rot == null ? e.getXRot() : rot.x;
-                if (move(e, at(level, pos, yaw, pitch))) n++;
+                if (!move(e, at(level, pos, yaw, pitch))) {
+                    if (e instanceof ServerPlayer p && p != me) ctx.getSource().sendFailure(Teleports.failedFor(p));
+                    continue;
+                }
+                n++;
             }
             if (n == 0) return 0;
             String where = String.format(java.util.Locale.ROOT, "%.1f, %.1f, %.1f", pos.x, pos.y, pos.z);
@@ -149,7 +157,7 @@ public final class TeleportCommands {
                 ServerPlayer p = online(ctx, "player");
                 if (p == me) return fail(ctx, Messages.get("teleport.self"));
                 if (!override && !Teleports.accepts(p, me)) return fail(ctx, Messages.get("teleport.targetToggled", p.getDisplayName()));
-                if (!Teleports.go(p, at(me), false, Messages.get("tp.broughtYou", me.getDisplayName()))) return fail(ctx, Messages.get("teleport.failedFor", p.getDisplayName()));
+                if (!Teleports.go(p, at(me), false, Messages.get("tp.broughtYou", me.getDisplayName()))) return fail(ctx, Teleports.failedFor(p));
                 reply(ctx, Messages.get("tp.brought", p.getDisplayName()));
                 return 1;
             })));
@@ -173,7 +181,7 @@ public final class TeleportCommands {
                     }))
                     .then(playerArg("to").executes(exec(ctx -> {
                         ServerPlayer p = online(ctx, "player"), to = online(ctx, "to");
-                        if (!Teleports.go(p, at(to), false, null)) return fail(ctx, Messages.get("teleport.failedFor", p.getDisplayName()));
+                        if (!Teleports.go(p, at(to), false, null)) return fail(ctx, Teleports.failedFor(p));
                         reply(ctx, Messages.get("tp.toEntity", p.getDisplayName(), to.getDisplayName()));
                         return 1;
                     }))));

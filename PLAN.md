@@ -126,9 +126,16 @@ player's with `player:home`, `bed`); warps (set, move, info, GUI, sending someon
 /tpahere, /tpaall, accept and deny by name or newest, /tpacancel, /tpauto, clickable buttons);
 /tptoggle; the warmup (cancelled by moving or by damage). Then checked in a real vanilla client:
 the home and warp GUIs, safe landings, /back after death, /tpr, the warmup, and /tpa and /tpahere
-with the clickable buttons. Not tested yet: the siege block (needs
-Curatorium Claims and a running siege), per-group spawns and the first-join spawn with a real
+with the clickable buttons. Not tested yet: per-group spawns and the first-join spawn with a real
 new player, the End with /world.
+
+Siege block tested 2026-11-26 with Curatorium Claims 1.3.1 and a real siege (an op bot as the
+defender, a Siege Engine powered by a Creative Motor): during the attack every teleport into or
+out of the claim was refused, ops included: /spawn, /home, /tpa (accepted), /tpr, /top, /back,
+/tp, /tppos and the console's /tp. With `essentials.teleport.bypass-siege` the bot teleported in
+and out; after `/claims siege stop <owner>` teleports worked again without it. Found and fixed:
+whoever moves someone else (the console, /tp, /tphere, /tpo) now hears why it was refused, not
+just the player.
 
 Notes from building it:
 - The siege check reaches Curatorium Claims by reflection, so Essentials builds and runs without it. Nobody has `essentials.teleport.bypass-siege` unless LuckPerms grants it, ops included.

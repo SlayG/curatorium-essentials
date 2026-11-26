@@ -89,6 +89,22 @@ public final class Teleports {
         return ClaimsHook.underSiege(level, BlockPos.containing(x, y, z));
     }
 
+    /** Why the last {@link #go} call refused, for telling whoever moved someone else. Server thread only. */
+    private static Component lastRefusal;
+
+    private static boolean refuse(ServerPlayer p, Component why) {
+        lastRefusal = why;
+        p.sendSystemMessage(why);
+        return false;
+    }
+
+    /** "Couldn't teleport X", with the reason when there was one. */
+    public static Component failedFor(ServerPlayer p) {
+        Component why = lastRefusal;
+        return why == null ? Messages.get("teleport.failedFor", p.getDisplayName())
+                : Messages.get("teleport.failedForReason", p.getDisplayName(), why);
+    }
+
     /**
      * Teleports a player. Tells them (and returns false) if it can't.
      *
@@ -96,24 +112,18 @@ public final class Teleports {
      * @param done    told to the player once they've arrived (null for nothing)
      */
     public static boolean go(ServerPlayer p, Location dest, boolean travel, Component done) {
+        lastRefusal = null;
         ServerLevel level = dest.level(p.server);
-        if (level == null) {
-            p.sendSystemMessage(Messages.get("teleport.noWorld", dest.dimension()));
-            return false;
-        }
+        if (level == null) return refuse(p, Messages.get("teleport.noWorld", dest.dimension()));
         if (!Perms.has(p, "essentials.teleport.bypass-siege", Perms.NOBODY)
                 && (sieged(p.serverLevel(), p.getX(), p.getY(), p.getZ()) || sieged(level, dest.x(), dest.y(), dest.z()))) {
-            p.sendSystemMessage(Messages.get("teleport.siege"));
-            return false;
+            return refuse(p, Messages.get("teleport.siege"));
         }
         UserData d = UserStore.get(p);
         long now = System.currentTimeMillis();
         if (travel && !Perms.has(p, "essentials.teleport.cooldown.bypass", Perms.ADMIN)) {
             Long until = d.cooldowns.get(COOLDOWN_KEY);
-            if (until != null && until > now) {
-                p.sendSystemMessage(Messages.get("teleport.cooldown", Durations.format(until - now)));
-                return false;
-            }
+            if (until != null && until > now) return refuse(p, Messages.get("teleport.cooldown", Durations.format(until - now)));
         }
         int warmup = EssConfig.TP_WARMUP.get();
         if (travel && warmup > 0 && !Perms.has(p, "essentials.teleport.timer.bypass", Perms.ADMIN)) {

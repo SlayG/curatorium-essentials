@@ -455,6 +455,34 @@
   "flow": 0,
   "version": "6.0.10"
  },
+ "curatorium_claims:action": {
+  "flow": 0,
+  "version": "8"
+ },
+ "curatorium_claims:mail": {
+  "flow": 1,
+  "version": "8"
+ },
+ "curatorium_claims:mail_action": {
+  "flow": 0,
+  "version": "8"
+ },
+ "curatorium_claims:siege": {
+  "flow": 1,
+  "version": "8"
+ },
+ "curatorium_claims:siege_action": {
+  "flow": 0,
+  "version": "8"
+ },
+ "curatorium_claims:snapshot": {
+  "flow": 1,
+  "version": "8"
+ },
+ "curatorium_claims:sync": {
+  "flow": 1,
+  "version": "8"
+ },
  "neoforge:config_file": {
   "flow": 1,
   "version": "1"
