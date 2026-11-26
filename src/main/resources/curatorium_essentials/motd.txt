@@ -1,0 +1,3 @@
+&6Welcome, &r{DISPLAYNAME}&6!
+&6There are &c{ONLINE}&6 of &c{MAXPLAYERS}&6 players online.
+&6Type &c/help&6 for commands and &c/rules&6 for the rules.

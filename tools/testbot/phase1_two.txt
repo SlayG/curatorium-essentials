@@ -1,0 +1,24 @@
+reconnect Carol
+Alice /nick &cAli
+Alice hello with nick
+Bob /realname ali
+Bob /msg Ali via nick
+Alice /nick Bob Bobby
+Bob /list
+Alice /nick Bob Alice
+Alice /nick Bob off
+Alice /socialspy
+Bob /msg Carol secret
+Alice /socialspy
+Bob /ignore Alice
+Bob /mail send Carol mail to carol
+Carol /mail
+Bob /seen Carol
+console lp creategroup admin ;; lp group default meta setprefix "&7[Member] " ;; lp group admin meta setprefix "&4[Admin] " ;; lp user Alice parent set admin
+sleep 1
+Bob prefix check
+Alice admin prefix check
+console tp Carol 1000 120 1000
+sleep 1
+Bob /ping
+Bob /ping

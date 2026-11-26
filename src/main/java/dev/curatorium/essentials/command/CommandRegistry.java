@@ -25,6 +25,7 @@ import net.minecraft.commands.Commands;
  */
 public final class CommandRegistry {
     private static final List<EssCommand> COMMANDS = new ArrayList<>();
+    private static final Map<String, EssCommand> LABELS = new java.util.concurrent.ConcurrentHashMap<>();
 
     public static void add(EssCommand command) {
         COMMANDS.add(command);
@@ -34,7 +35,13 @@ public final class CommandRegistry {
         return Collections.unmodifiableList(COMMANDS);
     }
 
+    /** The Essentials command registered under a label (name or alias), or null. */
+    public static EssCommand byLabel(String label) {
+        return LABELS.get(label);
+    }
+
     public static void registerAll(CommandDispatcher<CommandSourceStack> dispatcher) {
+        LABELS.clear();
         int count = 0;
         for (EssCommand command : COMMANDS) {
             if (EssConfig.isDisabled(command.name())) continue;
@@ -52,6 +59,7 @@ public final class CommandRegistry {
                         .requires(src -> Perms.has(src, command.node(), command.defaultLevel()));
                 command.build(root);
                 dispatcher.register(root);
+                LABELS.put(label, command);
                 count++;
             }
         }

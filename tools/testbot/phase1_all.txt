@@ -1,0 +1,69 @@
+# who command (chat if no leading /)
+Alice hello everyone &cred? https://example.com
+Bob /help
+Bob /help 2
+Bob /help msg
+Bob /msg Alice hi alice
+Alice /r hi back
+Bob /tell Ali partial name works
+Alice /w Bob vanilla alias replaced
+console msg Bob hello from console
+Bob /r reply to console
+Alice /socialspy
+Bob /msg Alice spied?
+Alice /socialspy
+Bob /me waves
+Alice /ignore Bob
+Bob hello ignored
+Bob /msg Alice you shouldn't see this
+Alice /ignore
+Alice /ignore Bob
+Bob /msgtoggle
+Alice /msg Bob blocked?
+Bob /msgtoggle
+Bob /helpop I need help
+Alice /broadcast &aHello &lall
+Bob /broadcast not allowed
+Bob /afk brb coffee
+Alice /msg Bob are you there
+Bob back now
+Bob /list
+Alice /nick &cAli
+Alice hello with nick
+Bob /realname ali
+Bob /msg Ali via nick
+Bob /nick Bobby
+Alice /nick Bob Bobby
+Alice /nick Bob Alice
+Alice /nick off
+Bob /mail send Alice first mail
+Bob /mail send Alice second mail
+Alice /mail
+Alice /mail clear 1
+Alice /mail read
+Alice /mail clear
+Alice /mail sendtemp Bob 1h temporary
+Bob /mail
+Bob /motd
+Bob /rules
+Bob /info
+Bob /info about
+Bob /info nope
+Bob /ping
+Bob /playtime
+Bob /playtime Alice
+Bob /seen Alice
+Alice /seen Bob
+Alice /seen 127.0.0.1
+Bob /seen 127.0.0.1
+Alice /whois Bob
+Bob /whois Alice
+Bob /getpos
+Bob /depth
+Bob /compass
+Alice /near
+Bob /near
+Bob /essentials
+Alice /essentials version
+reconnect Bob
+console list ;; essentials version

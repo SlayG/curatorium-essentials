@@ -51,7 +51,79 @@ public final class EssConfig {
                 .define("countEnderChest", false);
         b.pop();
 
+        b.comment("Chat (EssentialsX Chat). Formats use & colour codes and these placeholders:",
+                "{DISPLAYNAME} {USERNAME} {NICKNAME} {PREFIX} {SUFFIX} {GROUP} {WORLDNAME} {MESSAGE}",
+                "{PREFIX}, {SUFFIX} and {GROUP} come from LuckPerms.").push("chat");
+        CHAT_FORMAT = b.comment("Format for everyone without a group format.")
+                .define("format", "{PREFIX}{DISPLAYNAME}{SUFFIX}&7: &r{MESSAGE}");
+        GROUP_FORMATS = b.comment("Per LuckPerms group (primary group), as \"group=format\",",
+                        "e.g. [\"staff=&c[Staff] &r{DISPLAYNAME}&7: &f{MESSAGE}\"].")
+                .defineListAllowEmpty("groupFormats", List.of(), EssConfig::isString);
+        CHAT_RADIUS = b.comment("Local chat: only players within this many blocks (same dimension) see a message.",
+                        "0 turns local chat off: everyone sees everything. Start a message with ! to shout",
+                        "to everyone (essentials.chat.shout) or ? to ask everyone (essentials.chat.question).")
+                .defineInRange("radius", 0, 0, 100_000);
+        b.pop();
+
+        b.comment("Nicknames and how names show in the tab list.").push("names");
+        NICK_PREFIX = b.comment("Shown before every nickname, so players can tell it isn't a real name. \"\" for none.")
+                .define("nickPrefix", "~");
+        NICK_MAX_LENGTH = b.comment("Longest nickname allowed, not counting colour codes.")
+                .defineInRange("nickMaxLength", 16, 1, 64);
+        TAB_DISPLAY_NAME = b.comment("Show nicknames (and AFK) in the tab list.")
+                .define("tabListDisplayName", true);
+        TAB_PREFIX = b.comment("Also show the LuckPerms prefix and suffix in the tab list.")
+                .define("tabListPrefix", false);
+        b.pop();
+
+        b.comment("Away from keyboard.").push("afk");
+        AUTO_AFK = b.comment("Seconds without moving or chatting before a player is marked AFK (needs essentials.afk.auto). 0 = never.")
+                .defineInRange("autoAfkSeconds", 300, 0, 86_400);
+        AFK_KICK = b.comment("Seconds without activity before a player is kicked (unless essentials.afk.kickexempt). 0 = never.")
+                .defineInRange("kickSeconds", 0, 0, 86_400);
+        AFK_BROADCAST = b.comment("Tell everyone when a player goes AFK or comes back.")
+                .define("broadcast", true);
+        b.pop();
+
+        b.comment("What players see when they join.").push("join");
+        MOTD_ON_JOIN = b.comment("Show motd.txt on join.").define("showMotd", true);
+        MAIL_ON_JOIN = b.comment("Tell players about unread mail on join.").define("notifyMail", true);
+        b.pop();
+
+        b.push("misc");
+        NEAR_RADIUS = b.comment("Default /near radius.").defineInRange("nearRadius", 200, 1, 100_000);
+        NEAR_MAX = b.comment("Largest /near radius (unless essentials.near.maxexempt).").defineInRange("nearMaxRadius", 1000, 1, 100_000);
+        MAILS_PER_MINUTE = b.comment("Most mails one player can send per minute.").defineInRange("mailsPerMinute", 5, 1, 1000);
+        b.pop();
+
         SPEC = b.build();
+    }
+
+    public static final ModConfigSpec.ConfigValue<String> CHAT_FORMAT;
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> GROUP_FORMATS;
+    public static final ModConfigSpec.IntValue CHAT_RADIUS;
+    public static final ModConfigSpec.ConfigValue<String> NICK_PREFIX;
+    public static final ModConfigSpec.IntValue NICK_MAX_LENGTH;
+    public static final ModConfigSpec.BooleanValue TAB_DISPLAY_NAME;
+    public static final ModConfigSpec.BooleanValue TAB_PREFIX;
+    public static final ModConfigSpec.IntValue AUTO_AFK;
+    public static final ModConfigSpec.IntValue AFK_KICK;
+    public static final ModConfigSpec.BooleanValue AFK_BROADCAST;
+    public static final ModConfigSpec.BooleanValue MOTD_ON_JOIN;
+    public static final ModConfigSpec.BooleanValue MAIL_ON_JOIN;
+    public static final ModConfigSpec.IntValue NEAR_RADIUS;
+    public static final ModConfigSpec.IntValue NEAR_MAX;
+    public static final ModConfigSpec.IntValue MAILS_PER_MINUTE;
+
+    private static Map<String, String> groupFormats = Map.of();
+
+    /** The chat format for a LuckPerms group, or the default format. */
+    public static String chatFormat(String group) {
+        if (group != null) {
+            String f = groupFormats.get(group.toLowerCase(Locale.ROOT));
+            if (f != null) return f;
+        }
+        return CHAT_FORMAT.get();
     }
 
     private static Set<String> disabled = Set.of();
@@ -71,6 +143,16 @@ public final class EssConfig {
         cooldowns = pairs(COOLDOWNS.get(), "cooldowns");
         costs = pairs(COSTS.get(), "costs");
         countEnderChest = COUNT_ENDER_CHEST.get();
+        Map<String, String> formats = new HashMap<>();
+        for (String entry : GROUP_FORMATS.get()) {
+            int eq = entry.indexOf('=');
+            if (eq < 1) {
+                CuratoriumEssentials.LOGGER.warn("Ignoring bad chat.groupFormats entry \"{}\" (expected group=format)", entry);
+                continue;
+            }
+            formats.put(entry.substring(0, eq).trim().toLowerCase(Locale.ROOT), entry.substring(eq + 1));
+        }
+        groupFormats = formats;
     }
 
     private static Set<String> lower(List<? extends String> list) {

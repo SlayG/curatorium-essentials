@@ -66,6 +66,10 @@ public final class Messages {
         return messages.getOrDefault(key, key);
     }
 
+    public static boolean has(String key) {
+        return messages.containsKey(key);
+    }
+
     /** The message for {@code key} with its placeholders filled. */
     public static MutableComponent get(String key, Object... args) {
         return Text.format(raw(key), args);

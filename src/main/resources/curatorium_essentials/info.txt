@@ -1,0 +1,5 @@
+&6Server information. Pick a chapter: &c/info <chapter>
+#About
+&6This server runs Curatorium Essentials.
+#Commands
+&6Type &c/help&6 to see the commands you can use.

@@ -1,7 +1,9 @@
 package dev.curatorium.essentials.util;
 
-import com.mojang.authlib.GameProfile;
+import dev.curatorium.essentials.data.UserStore;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import dev.curatorium.essentials.player.Names;
+import dev.curatorium.essentials.text.Text;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -15,7 +17,6 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * Finding players by name for commands that take a plain string, so offline players and
  * partial names work (vanilla's player argument only matches online players exactly).
- * Nicknames join in with Phase 1.
  */
 public final class PlayerLookup {
     /** A found player: always a UUID and name, plus the player if they're online. */
@@ -29,14 +30,24 @@ public final class PlayerLookup {
     public static final SuggestionProvider<CommandSourceStack> ONLINE = (ctx, builder) ->
             SharedSuggestionProvider.suggest(ctx.getSource().getServer().getPlayerNames(), builder);
 
-    /** An online player: exact name first, then the only name starting with the input. */
+    /**
+     * An online player: exact name, then exact nickname, then the only player whose name or
+     * nickname starts with the input.
+     */
     public static Optional<ServerPlayer> online(MinecraftServer server, String input) {
         ServerPlayer exact = server.getPlayerList().getPlayerByName(input);
         if (exact != null) return Optional.of(exact);
-        String prefix = input.toLowerCase(Locale.ROOT);
+        String needle = Text.plain(input).toLowerCase(Locale.ROOT);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (needle.equals(Names.plainNick(p))) return Optional.of(p);
+        }
         List<ServerPlayer> matches = new ArrayList<>();
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            if (p.getGameProfile().getName().toLowerCase(Locale.ROOT).startsWith(prefix)) matches.add(p);
+            String nick = Names.plainNick(p);
+            if (p.getGameProfile().getName().toLowerCase(Locale.ROOT).startsWith(needle)
+                    || (nick != null && nick.startsWith(needle))) {
+                matches.add(p);
+            }
         }
         return matches.size() == 1 ? Optional.of(matches.get(0)) : Optional.empty();
     }
@@ -48,9 +59,9 @@ public final class PlayerLookup {
             ServerPlayer p = on.get();
             return Optional.of(new Target(p.getUUID(), p.getGameProfile().getName(), p));
         }
-        if (server.getProfileCache() == null) return Optional.empty();
-        Optional<GameProfile> profile = server.getProfileCache().get(input);
-        return profile.map(gp -> new Target(gp.getId(), gp.getName(), server.getPlayerList().getPlayer(gp.getId())));
+        // Our own index of players who've joined: the vanilla profile cache would ask Mojang
+        // (blocking the server) or, in offline mode, invent a profile for any name.
+        return UserStore.byName(input).map(k -> new Target(k.uuid(), k.name(), server.getPlayerList().getPlayer(k.uuid())));
     }
 
     private PlayerLookup() {}

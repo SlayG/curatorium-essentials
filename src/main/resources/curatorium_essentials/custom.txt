@@ -1,0 +1,3 @@
+#Example
+&6Custom text goes in config/curatorium_essentials/custom.txt.
+&6Start a chapter with a line like &c#Name&6, then show it with &c/customtext Name&6.

@@ -1,7 +1,14 @@
 package dev.curatorium.essentials;
 
+import dev.curatorium.essentials.chat.Chat;
 import dev.curatorium.essentials.command.CommandRegistry;
 import dev.curatorium.essentials.commands.EssentialsCommand;
+import dev.curatorium.essentials.commands.InfoCommands;
+import dev.curatorium.essentials.commands.MessagingCommands;
+import dev.curatorium.essentials.commands.PlayerCommands;
+import dev.curatorium.essentials.player.Afk;
+import dev.curatorium.essentials.player.Names;
+import dev.curatorium.essentials.text.TextFiles;
 import dev.curatorium.essentials.config.EssConfig;
 import dev.curatorium.essentials.data.UserStore;
 import dev.curatorium.essentials.perm.Perms;
@@ -45,8 +52,16 @@ public final class CuratoriumEssentials {
         Messages.load();
 
         CommandRegistry.add(new EssentialsCommand());
+        MessagingCommands.register();
+        PlayerCommands.register();
+        InfoCommands.register();
 
         IEventBus bus = NeoForge.EVENT_BUS;
+        Chat.registerEvents(bus);
+        Names.registerEvents(bus);
+        Afk.registerEvents(bus);
+        PlayerCommands.registerEvents(bus);
+        InfoCommands.registerEvents(bus);
         bus.addListener(RegisterCommandsEvent.class, e -> CommandRegistry.registerAll(e.getDispatcher()));
         bus.addListener(ServerAboutToStartEvent.class, e -> {
             server = e.getServer();
@@ -75,8 +90,12 @@ public final class CuratoriumEssentials {
     public static void reload() {
         EssConfig.bake();
         Messages.load();
+        TextFiles.reload();
         if (server != null) {
-            server.getPlayerList().getPlayers().forEach(p -> server.getCommands().sendCommands(p));
+            server.getPlayerList().getPlayers().forEach(p -> {
+                server.getCommands().sendCommands(p);
+                Names.refresh(p);
+            });
         }
     }
 }

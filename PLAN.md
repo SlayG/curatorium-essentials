@@ -49,18 +49,36 @@ game): LuckPerms checks for a player, cooldowns, command costs and the coin wall
 replacing vanilla commands. These get tested with Phase 1.
 
 - Gradle project copied from `curatorium-exchange`'s setup; compiles against `C:/Creatorium/Mod Repo` (Numismatics) and the LuckPerms API from Maven (`net.luckperms:api`, compile-only).
-- Download LuckPerms for NeoForge 1.21.1 from its official site into `Mod Repo` for local testing (only needed to run, not to build).
+- LuckPerms for NeoForge goes in `Mod Repo` for local testing (only needed to run, not to build). Use 5.4.150; see Phase 1.
 - **Data**: per-player JSON at `<world>/curatorium_essentials/userdata/<uuid>.json` (homes, nick, mail, ignores, mute/jail state, last location, playtime, flags); `warps/`, `jails.json`, `kits.json`, `worth.json`, `spawn.json`. Saved asynchronously, flushed on stop.
 - **Config**: `config/curatorium_essentials/` — `config.toml` (mirrors EssentialsX `config.yml` sections), `chat.toml`, `economy.toml`, `discord.toml`, `messages.properties`, `motd.txt`, `rules.txt`, `info.txt`.
 - **Permission layer**: registers every node with the NeoForge PermissionAPI, with a default (op level or everyone). LuckPerms then overrides per group. Ships a `luckperms-defaults.md` with the commands to set up `default` and `staff` groups.
 - **Shared services**: cooldowns and warmups, command costs, player lookup (online/offline, by nick), user cache, `/essentials reload`, `/essentials version`.
 
-## Phase 1 — Chat and messaging (0.2.0)
+## Phase 1 — Chat and messaging (0.2.0) — done
+
+Tested on the dev server with three bot players (a small Python client for 1.21.1) and
+LuckPerms 5.4.150. Everything below works, including replacing vanilla `/msg`, `/tell`, `/w`,
+`/me`, `/list` and `/help`, LuckPerms prefixes in chat, a per-group chat format, local chat
+with spy, shouting and questions, auto-AFK, cooldowns, and nicknames that persist across
+reconnects. Not tested yet: the AFK kick, clickable links and the tab list as a real client
+draws them, `/mail sendall`, and command costs (Numismatics isn't on the dev server).
+
+- **LuckPerms version.** LuckPerms **5.4.140**, the only build Modrinth lists for 1.21.1, kicks
+  every player on join on NeoForge 1.21.1 ("Invalid player data"; LuckPerms issues #3963, #4235,
+  #4259, #4335). **5.4.150** (labelled 1.21.4) works on 1.21.1 and is what the server should
+  use. A known side effect from those threads is a warning in the LuckPerms web editor's context
+  suggestions.
+- **Above-head names** stay the real name: that needs a client mod. Nicknames show everywhere
+  else (chat, join/leave and death messages, `/msg`, tab list).
+- **Offline lookups** (`/seen`, `/mail send`, `/ignore`, `/playtime`) only find players who have
+  joined this server (from `usercache.json` and the mod's own player files), so they never
+  stall the server on a Mojang lookup.
 
 EssentialsX Chat:
 - Chat format per LuckPerms group, using `{DISPLAYNAME}`, `{PREFIX}`, `{SUFFIX}`, `{GROUP}`, `{WORLDNAME}`, `{MESSAGE}`; colour/format permission per player.
 - Local chat with a radius, `!` prefix to shout, `?` for question, `/toggleshout`.
-- Nicknames and prefixes also shown in the tab list and above heads.
+- Nicknames and prefixes also shown in the tab list.
 - Works with NoChatReports (both send chat as server messages).
 
 Messaging and info commands: `msg`, `r`, `rtoggle`, `msgtoggle`, `socialspy`, `ignore`, `mail`, `me`, `helpop`, `broadcast`, `broadcastworld`, `afk` (with auto-AFK and kick), `nick`, `realname`, `list`, `motd`, `rules`, `info`/`customtext`, `help`, `ping`, `playtime`, `seen`, `whois`, `getpos`, `depth`, `compass`, `near`.

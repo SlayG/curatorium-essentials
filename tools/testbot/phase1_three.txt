@@ -1,0 +1,15 @@
+reconnect Carol
+console tp Carol 1000 120 1000
+sleep 1
+Bob local hello
+Carol is anyone there
+Carol !shouting now
+Carol ?a question
+Carol /toggleshout
+Carol shouting by default
+Carol /toggleshout
+sleep 6
+move Bob
+sleep 1
+Alice /afk
+Alice still afk?

@@ -1,13 +1,21 @@
 package dev.curatorium.essentials.command;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import dev.curatorium.essentials.perm.Perms;
+import dev.curatorium.essentials.text.Messages;
+import dev.curatorium.essentials.util.PlayerLookup;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  * One Essentials command. Subclasses add their arguments in {@link #build}; wrap every
@@ -71,5 +79,45 @@ public abstract class EssCommand {
     protected static int fail(CommandContext<CommandSourceStack> ctx, Component message) {
         ctx.getSource().sendFailure(message);
         return 0;
+    }
+
+    /** An error that stops the command and shows {@code message} in red. */
+    protected static CommandSyntaxException error(Component message) {
+        return new SimpleCommandExceptionType(message).create();
+    }
+
+    /** A player-name argument (plain word, so partial names, nicknames and offline players work). */
+    protected static RequiredArgumentBuilder<CommandSourceStack, String> playerArg(String name) {
+        return Commands.argument(name, StringArgumentType.word()).suggests(PlayerLookup.ONLINE);
+    }
+
+    /** A greedy text argument: everything to the end of the line. */
+    protected static RequiredArgumentBuilder<CommandSourceStack, String> textArg(String name) {
+        return Commands.argument(name, StringArgumentType.greedyString());
+    }
+
+    /** The online player named by argument {@code name}, or an error. */
+    protected static ServerPlayer online(CommandContext<CommandSourceStack> ctx, String name) throws CommandSyntaxException {
+        String input = StringArgumentType.getString(ctx, name);
+        return PlayerLookup.online(ctx.getSource().getServer(), input)
+                .orElseThrow(() -> error(Messages.get("player.notOnline", input)));
+    }
+
+    /** Any known player named by argument {@code name}, online or not, or an error. */
+    protected static PlayerLookup.Target known(CommandContext<CommandSourceStack> ctx, String name) throws CommandSyntaxException {
+        String input = StringArgumentType.getString(ctx, name);
+        return PlayerLookup.any(ctx.getSource().getServer(), input)
+                .orElseThrow(() -> error(Messages.get("player.notFound", input)));
+    }
+
+    protected static String str(CommandContext<CommandSourceStack> ctx, String name) {
+        return StringArgumentType.getString(ctx, name);
+    }
+
+    /** The player running the command, or an error if it's the console. */
+    protected static ServerPlayer self(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer p = ctx.getSource().getPlayer();
+        if (p == null) throw error(Messages.get("command.playerOnly"));
+        return p;
     }
 }

@@ -1,7 +1,11 @@
 package dev.curatorium.essentials.data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -23,6 +27,40 @@ public final class UserData {
     /** Command name to epoch millis when its cooldown ends. */
     public Map<String, Long> cooldowns = new HashMap<>();
 
+    /** Epoch millis of the current (or last) login. */
+    public long lastLogin;
+    /** IP address at last login. */
+    public String lastIp = "";
+    /** Nickname with its colour codes, or null for none. */
+    public String nick;
+    /** Players whose chat, messages and mail this player doesn't see. */
+    public Set<UUID> ignored = new HashSet<>();
+    public List<Mail> mail = new ArrayList<>();
+    /** Sees everyone's private messages (needs essentials.socialspy too). */
+    public boolean socialSpy;
+    /** Doesn't receive private messages (/msgtoggle). */
+    public boolean msgDisabled;
+    /** /r goes to whoever this player last messaged, instead of whoever last messaged them (/rtoggle). */
+    public boolean replyToSent;
+    /** Every chat message shouts, with local chat on (/toggleshout). */
+    public boolean shout;
+
+    /** A message left with /mail. */
+    public static final class Mail {
+        /** Null when sent from the console. */
+        public UUID sender;
+        public String senderName = "";
+        public long sent;
+        /** Epoch millis when it disappears, 0 for never (/mail sendtemp). */
+        public long expires;
+        public String message = "";
+        public boolean read;
+
+        public boolean expired(long now) {
+            return expires > 0 && now >= expires;
+        }
+    }
+
     /** Set when anything changes; the store saves dirty users. */
     transient boolean dirty;
 
@@ -35,5 +73,11 @@ public final class UserData {
         if (uuid == null) uuid = id;
         if (lastName == null) lastName = "";
         if (cooldowns == null) cooldowns = new HashMap<>();
+        if (lastIp == null) lastIp = "";
+        if (ignored == null) ignored = new HashSet<>();
+        if (mail == null) mail = new ArrayList<>();
+        mail.removeIf(m -> m == null || m.message == null);
+        long now = System.currentTimeMillis();
+        mail.removeIf(m -> m.expired(now));
     }
 }

@@ -11,8 +11,13 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,6 +59,7 @@ public final class UserStore {
             CuratoriumEssentials.LOGGER.error("Could not create {}", userDir, e);
         }
         cache.clear();
+        indexNames(server);
         writer = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "Curatorium Essentials saver");
             t.setDaemon(true);
@@ -111,8 +117,73 @@ public final class UserStore {
         UserData data = get(player);
         long now = System.currentTimeMillis();
         if (data.firstJoin == 0) data.firstJoin = now;
+        data.lastLogin = now;
         data.lastName = player.getGameProfile().getName();
+        data.lastIp = player.getIpAddress();
         data.markDirty();
+        remember(player.getUUID(), data.lastName);
+    }
+
+    /** A player known by name: their UUID and the name as last seen. */
+    public record Known(UUID uuid, String name) {}
+
+    /** lower-case name -> player. Never asks Mojang; only players who have joined this server. */
+    private static final Map<String, Known> names = new ConcurrentHashMap<>();
+
+    /** A player who has joined this server, by exact name (any case). */
+    public static java.util.Optional<Known> byName(String name) {
+        return java.util.Optional.ofNullable(names.get(name.toLowerCase(java.util.Locale.ROOT)));
+    }
+
+    /** Fills the name index from vanilla's usercache.json, then from the mod's own player files (newer). */
+    private static void indexNames(MinecraftServer server) {
+        names.clear();
+        Path usercache = server.getServerDirectory().resolve("usercache.json");
+        if (Files.exists(usercache)) {
+            try (Reader r = Files.newBufferedReader(usercache, StandardCharsets.UTF_8)) {
+                for (var el : com.google.gson.JsonParser.parseReader(r).getAsJsonArray()) {
+                    var o = el.getAsJsonObject();
+                    remember(UUID.fromString(o.get("uuid").getAsString()), o.get("name").getAsString());
+                }
+            } catch (Exception e) {
+                CuratoriumEssentials.LOGGER.warn("Could not read {}: {}", usercache, e.toString());
+            }
+        }
+        for (UUID id : allKnown()) {
+            Path file = file(id);
+            try (Reader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+                var o = com.google.gson.JsonParser.parseReader(r).getAsJsonObject();
+                if (o.has("lastName") && !o.get("lastName").getAsString().isEmpty()) remember(id, o.get("lastName").getAsString());
+            } catch (Exception e) {
+                // unreadable files are reported when the player's data is loaded
+            }
+        }
+    }
+
+    private static void remember(UUID id, String name) {
+        names.values().removeIf(k -> k.uuid().equals(id)); // a renamed player keeps one entry
+        names.put(name.toLowerCase(java.util.Locale.ROOT), new Known(id, name));
+    }
+
+    /** Every player who has a data file (has joined with the mod installed), online or not. */
+    public static List<UUID> allKnown() {
+        Set<UUID> out = new LinkedHashSet<>(cache.keySet());
+        if (userDir != null) {
+            try (Stream<Path> files = Files.list(userDir)) {
+                files.map(p -> p.getFileName().toString())
+                        .filter(n -> n.endsWith(".json"))
+                        .forEach(n -> {
+                            try {
+                                out.add(UUID.fromString(n.substring(0, n.length() - 5)));
+                            } catch (IllegalArgumentException ignored) {
+                                // not a player file
+                            }
+                        });
+            } catch (IOException e) {
+                CuratoriumEssentials.LOGGER.error("Could not list {}", userDir, e);
+            }
+        }
+        return new ArrayList<>(out);
     }
 
     private static void onLogout(ServerPlayer player) {

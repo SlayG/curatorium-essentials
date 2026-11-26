@@ -51,5 +51,22 @@ public final class Perms {
         return defaultLevel <= ALL || player.hasPermissions(defaultLevel);
     }
 
+    /** A player's LuckPerms prefix, suffix and primary group ("" / null without LuckPerms). */
+    public record Meta(String prefix, String suffix, String group) {
+        public static final Meta NONE = new Meta("", "", null);
+    }
+
+    public static Meta meta(ServerPlayer player) {
+        return luckPerms ? LuckPermsHook.meta(player) : Meta.NONE;
+    }
+
+    /** The Essentials permissions for writing formatted text, under {@code base} (e.g. "essentials.chat"). */
+    public record TextPerms(boolean color, boolean format, boolean magic, boolean links) {}
+
+    public static TextPerms textPerms(ServerPlayer player, String base) {
+        return new TextPerms(has(player, base + ".color", OP), has(player, base + ".format", OP),
+                has(player, base + ".magic", OP), has(player, base + ".url", ALL));
+    }
+
     private Perms() {}
 }

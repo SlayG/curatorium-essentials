@@ -11,12 +11,15 @@ What's done and what's next: [PLAN.md](PLAN.md).
 
 ## Status
 
-**0.1.0, Phase 0 (foundation).** The only command is `/essentials` (`/ess`): `version` and `reload`.
-Everything else arrives in later phases.
+**0.2.0, Phase 1 (chat and messaging).** EssentialsX Chat (group formats, LuckPerms prefixes,
+local chat, shouting), nicknames, AFK, private messages, mail, ignore, `/list`, `/help`, the text
+files (`motd`, `rules`, `info`) and player look-ups (`/seen`, `/whois`, `/near`…). Moderation,
+teleports, the economy and Discord arrive in later phases.
 
 ## Installing
 
-Put the jar in the server's `mods` folder, with LuckPerms for NeoForge alongside it. Numismatics
+Put the jar in the server's `mods` folder, with **LuckPerms for NeoForge 5.4.150** alongside it
+(not 5.4.140, which kicks every player on join on 1.21.1; see [luckperms-defaults.md](luckperms-defaults.md)). Numismatics
 is optional; without it, the economy is off. Nothing goes in the client pack.
 
 ## Files
@@ -24,7 +27,9 @@ is optional; without it, the economy is off. Nothing goes in the client pack.
 | File | What it is |
 |---|---|
 | `config/curatorium_essentials/config.toml` | Settings: disabled commands, which vanilla commands to replace, cooldowns, command costs. Reloads by itself when saved. |
+| `config/curatorium_essentials/config.toml` chat and names sections | Chat format, per-group formats, local chat radius, nickname prefix and length, tab list, AFK timings. |
 | `config/curatorium_essentials/messages.properties` | Every message the mod shows, with `&` colour codes. Run `/essentials reload` after editing. |
+| `config/curatorium_essentials/motd.txt`, `rules.txt`, `info.txt`, `custom.txt` | Text for `/motd` (also shown on join), `/rules`, `/info` and `/customtext`. Lines starting with `#` start a chapter. |
 | `<world>/curatorium_essentials/` | Player data (`userdata/<uuid>.json`) and, in later phases, warps, jails, kits and so on. |
 | `logs/curatorium_essentials-economy.log` | Every coin taken or given by the mod. |
 
