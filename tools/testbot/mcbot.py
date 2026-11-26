@@ -221,8 +221,52 @@ class Bot:
             key = b.string()
             self.send_raw(0x04, mcstr(key) + b"\x00")
 
+    def neoforge_query(self):
+        """Our answer to NeoForge's channel query: every channel in neoforge_channels.json, as optional."""
+        import json, os
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "neoforge_channels.json")
+        chans = json.load(open(path)) if os.path.exists(path) else {}
+        out = varint(2)
+        for proto in (1, 4):  # PLAY, CONFIGURATION
+            out += varint(proto) + varint(len(chans))
+            for cid, c in chans.items():
+                out += mcstr(cid) + mcstr(c["version"])
+                out += (b"\x01" + varint(c["flow"])) if c.get("flow") is not None else b"\x00"
+                out += b"\x01"  # optional on our side
+        return out
+
+    def on_config_payload(self, ident, b):
+        """NeoForge's configuration handshake, answered like a modded client would."""
+        reply = None
+        if ident == "neoforge:register":
+            reply = ("neoforge:register", self.neoforge_query())
+        elif ident == "neoforge:frozen_registry_sync_completed":
+            reply = (ident, b"")
+        elif ident == "neoforge:extensible_enum_data":
+            reply = ("neoforge:extensible_enum_ack", b"")
+        elif ident == "neoforge:feature_flags":
+            reply = ("neoforge:feature_flags_ack", b"")
+        elif ident == "neoforge:known_registry_data_maps":
+            n = b.varint()
+            out = varint(n)
+            for _ in range(n):
+                reg = b.string()
+                m = b.varint()
+                ids = []
+                for _ in range(m):
+                    ids.append(b.string())
+                    b.u("?")
+                out += mcstr(reg) + varint(len(ids)) + b"".join(mcstr(i) for i in ids)
+            reply = ("neoforge:known_registry_data_maps_reply", out)
+        elif ident == "neoforge:modded_network_setup_failed":
+            self.disconnect_reason = "NeoForge channel negotiation failed (regenerate neoforge_channels.json)"
+        if reply:
+            self.send_raw(0x02, mcstr(reply[0]) + reply[1])
+
     def on_config(self, pid, b):
-        if pid == 0x00:  # cookie request
+        if pid == 0x01:  # custom payload
+            self.on_config_payload(b.string(), b)
+        elif pid == 0x00:  # cookie request
             self.send_raw(0x01, mcstr(b.string()) + b"\x00")
         elif pid == 0x02:
             self.disconnect_reason = flatten(read_nbt(b))
@@ -338,6 +382,28 @@ class Bot:
     def close_screen(self):
         self.send_raw(0x0F, struct.pack(">b", self.window))
 
+    def use_on(self, x, y, z, face=1):
+        """Right-click a block (face: 0 down, 1 up, 2 north, 3 south, 4 west, 5 east)."""
+        self.seq += 1
+        pos = ((x & 0x3FFFFFF) << 38) | ((z & 0x3FFFFFF) << 12) | (y & 0xFFF)
+        self.send_raw(0x38, varint(0) + struct.pack(">q", pos if pos < (1 << 63) else pos - (1 << 64)) + varint(face)
+                      + struct.pack(">fff?", 0.5, 0.5, 0.5, False) + varint(self.seq))
+
+    def dig(self, x, y, z, face=1, status=0):
+        """Player action: 0 start digging (breaks at once in creative), 2 finish digging."""
+        self.seq += 1
+        pos = ((x & 0x3FFFFFF) << 38) | ((z & 0x3FFFFFF) << 12) | (y & 0xFFF)
+        self.send_raw(0x24, varint(status) + struct.pack(">q", pos if pos < (1 << 63) else pos - (1 << 64))
+                      + struct.pack(">b", face) + varint(self.seq))
+
+    def write_sign(self, x, y, z, lines, front=True):
+        """Sends the text for a sign the server opened the editor for."""
+        pos = ((x & 0x3FFFFFF) << 38) | ((z & 0x3FFFFFF) << 12) | (y & 0xFFF)
+        body = struct.pack(">q", pos if pos < (1 << 63) else pos - (1 << 64)) + (b"\x01" if front else b"\x00")
+        for i in range(4):
+            body += mcstr(lines[i] if i < len(lines) else "")
+        self.send_raw(0x35, body)
+
     def use(self):
         self.seq += 1
         self.send_raw(0x39, varint(0) + varint(self.seq) + struct.pack(">ff", 0.0, 0.0))
@@ -360,6 +426,12 @@ class Bot:
 
     def close(self):
         self.alive = False
+        try:
+            # shutdown, not just close: the reader's file object keeps the socket open otherwise,
+            # and the server wouldn't notice the bot leaving.
+            self.sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
         try:
             self.sock.close()
         except OSError:

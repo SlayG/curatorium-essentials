@@ -180,3 +180,15 @@ lp group default permission set essentials.sethome true
 lp group default permission set essentials.delhome true
 lp group default permission set essentials.spawn true
 ```
+
+## Nodes (0.5.0: economy)
+
+| Node | What it allows | Default |
+|---|---|---|
+| `essentials.balance`, `essentials.pay`, `essentials.paytoggle`, `essentials.payconfirmtoggle` | Own balance; paying; refusing payments; confirming payments | everyone |
+| `essentials.balance.others`, `essentials.paytoggle.others` | Someone else's balance or toggle | op 2 |
+| `essentials.eco` | Minting and removing coins | op 4 |
+| `essentials.kit.nocost` | Kits without paying their price | op 4 |
+| `essentials.signs.create.<kind>` | Writing a working shop sign of that kind (`buy`, `sell`, `trade`, `kit`, `warp`, `heal`, `free`, `disposal`, `balance`, `time`, `weather`, `enchant`, `repair`, `spawnmob`, `gamemode`) | op 2 |
+| `essentials.signs.use.<kind>` | Using one | everyone, except `warp` (teleports are op-only), `spawnmob` and `gamemode`: op 2 |
+| `essentials.signs.break` | Breaking a shop sign | op 2 |

@@ -49,6 +49,13 @@ public final class EssConfig {
                 .push("economy");
         COUNT_ENDER_CHEST = b.comment("Also count and spend coins in the player's ender chest.")
                 .define("countEnderChest", false);
+        STARTING_COINS = b.comment("Spurs given (as coins) to a player on their first join. 0 for none.")
+                .defineInRange("startingCoins", 0L, 0L, Long.MAX_VALUE / 2);
+        PAY_CONFIRM = b.comment("/pay asks you to run it again to confirm, unless the player turns this off with /payconfirmtoggle.")
+                .define("payConfirm", false);
+        PAY_MIN = b.comment("Smallest /pay, in spurs.").defineInRange("minPay", 1L, 1L, Long.MAX_VALUE / 2);
+        SIGN_COLOR = b.comment("Colour code a working shop sign's first line gets, e.g. \"&1\" (dark blue).")
+                .define("signColor", "&1");
         b.pop();
 
         b.comment("Chat (EssentialsX Chat). Formats use & colour codes and these placeholders:",
@@ -184,6 +191,10 @@ public final class EssConfig {
         SPEC = b.build();
     }
 
+    public static final ModConfigSpec.LongValue STARTING_COINS;
+    public static final ModConfigSpec.BooleanValue PAY_CONFIRM;
+    public static final ModConfigSpec.LongValue PAY_MIN;
+    public static final ModConfigSpec.ConfigValue<String> SIGN_COLOR;
     public static final ModConfigSpec.IntValue TP_WARMUP;
     public static final ModConfigSpec.BooleanValue TP_CANCEL_MOVE;
     public static final ModConfigSpec.BooleanValue TP_CANCEL_DAMAGE;

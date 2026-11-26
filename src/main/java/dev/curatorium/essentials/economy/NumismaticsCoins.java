@@ -54,12 +54,17 @@ final class NumismaticsCoins {
                     int count = Math.min(n, stack.getMaxStackSize());
                     stack.setCount(count);
                     n -= count;
-                    if (!player.getInventory().add(stack) && !stack.isEmpty()) player.drop(stack, false);
+                    player.getInventory().add(stack);
+                    if (!stack.isEmpty()) player.drop(stack, false);
                 }
             }
             amount -= chunk;
         }
         player.getInventory().setChanged();
+    }
+
+    static boolean isCoin(ItemStack stack) {
+        return stack.getItem() instanceof CoinItem;
     }
 
     private static long valueOf(ItemStack stack) {

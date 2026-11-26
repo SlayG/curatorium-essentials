@@ -9,6 +9,8 @@ import dev.curatorium.essentials.commands.FunCommands;
 import dev.curatorium.essentials.commands.StateCommands;
 import dev.curatorium.essentials.commands.WorkstationCommands;
 import dev.curatorium.essentials.commands.WorldCommands;
+import dev.curatorium.essentials.economy.EconomyCommands;
+import dev.curatorium.essentials.economy.Signs;
 import dev.curatorium.essentials.kits.Kits;
 import dev.curatorium.essentials.teleport.Homes;
 import dev.curatorium.essentials.teleport.RandomTeleport;
@@ -88,6 +90,7 @@ public final class CuratoriumEssentials {
         Warps.register();
         Spawns.register();
         RandomTeleport.register();
+        EconomyCommands.register();
 
         IEventBus bus = NeoForge.EVENT_BUS;
         Chat.registerEvents(bus);
@@ -108,6 +111,8 @@ public final class CuratoriumEssentials {
         Warps.registerEvents(bus);
         Spawns.registerEvents(bus);
         RandomTeleport.registerEvents(bus);
+        EconomyCommands.registerEvents(bus);
+        Signs.registerEvents(bus);
         bus.addListener(RegisterCommandsEvent.class, e -> CommandRegistry.registerAll(e.getDispatcher(), e.getBuildContext()));
         bus.addListener(ServerAboutToStartEvent.class, e -> {
             server = e.getServer();

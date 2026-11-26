@@ -84,6 +84,16 @@ public final class UserData {
     /** /tpauto: accept teleport requests automatically. */
     public boolean tpAuto;
 
+    // ------------------------------------------------------------ economy (Phase 4)
+    /** Spurs paid to this player while offline, handed over at their next login. */
+    public long escrow;
+    /** Who sent the held coins, for the login message. */
+    public List<String> escrowNotes = new ArrayList<>();
+    /** /paytoggle: whether others may /pay this player. */
+    public boolean acceptPayments = true;
+    /** /payconfirmtoggle; null = the config default. */
+    public Boolean payConfirm;
+
     public boolean isMuted(long now) {
         return muteUntil == -1 || muteUntil > now;
     }
@@ -123,6 +133,7 @@ public final class UserData {
         if (unlimited == null) unlimited = new HashSet<>();
         if (kitsUsed == null) kitsUsed = new HashMap<>();
         if (homes == null) homes = new java.util.TreeMap<>();
+        if (escrowNotes == null) escrowNotes = new ArrayList<>();
         mail.removeIf(m -> m == null || m.message == null);
         long now = System.currentTimeMillis();
         mail.removeIf(m -> m.expired(now));

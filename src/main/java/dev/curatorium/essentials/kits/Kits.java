@@ -54,6 +54,8 @@ public final class Kits {
     /** One kit as saved. */
     static final class Kit {
         long delay;
+        /** Spurs paid from the inventory each time the kit is taken; 0 = free. */
+        long cost;
         List<JsonElement> items = new ArrayList<>();
     }
 
@@ -139,7 +141,11 @@ public final class Kits {
      * Gives a kit, checking its delay for {@code target} unless the source may skip delays.
      * Returns 1 if given.
      */
-    static int claim(CommandSourceStack src, ServerPlayer target, String name) {
+    public static boolean exists(String name) {
+        return kits.containsKey(name);
+    }
+
+    public static int claim(CommandSourceStack src, ServerPlayer target, String name) {
         Kit kit = kits.get(name);
         if (kit == null) {
             src.sendFailure(Messages.get("kit.unknown", name));
@@ -154,6 +160,20 @@ public final class Kits {
         if (wait != 0 && !Perms.has(src, "essentials.kit.exemptdelay", Perms.ADMIN)) {
             src.sendFailure(wait < 0 ? Messages.get("kit.onceOnly", name) : Messages.get("kit.wait", name, Durations.format(wait)));
             return 0;
+        }
+        // The kit's price is paid by whoever takes it (the source), unless they're exempt.
+        ServerPlayer payer = src.getPlayer() != null ? src.getPlayer() : target;
+        boolean pays = kit.cost > 0 && !Perms.has(src, "essentials.kit.nocost", Perms.ADMIN);
+        if (pays) {
+            if (!dev.curatorium.essentials.economy.Wallet.available()) {
+                src.sendFailure(Messages.get("economy.unavailable"));
+                return 0;
+            }
+            if (!dev.curatorium.essentials.economy.Wallet.take(payer, kit.cost, "kit " + name)) {
+                src.sendFailure(Messages.get("kit.cantAfford", name, dev.curatorium.essentials.economy.Money.format(kit.cost)));
+                return 0;
+            }
+            payer.sendSystemMessage(Messages.get("command.cost.paid", dev.curatorium.essentials.economy.Money.format(kit.cost)));
         }
         give(target, kit);
         markUsed(d, name);
@@ -203,6 +223,7 @@ public final class Kits {
                 lore.add(wait == 0 ? Messages.get("kit.icon.ready") : wait < 0 ? Messages.get("kit.icon.claimed")
                         : Messages.get("kit.icon.wait", Durations.format(wait)));
                 lore.add(Messages.get("kit.icon.items", items.size()));
+                if (kit.cost > 0) lore.add(Messages.get("kit.icon.cost", dev.curatorium.essentials.economy.Money.format(kit.cost)));
                 icon.set(DataComponents.LORE, new ItemLore(lore));
                 icons.setItem(i, icon);
             }
@@ -215,7 +236,7 @@ public final class Kits {
         }
     }
 
-    /** /createkit <name> <delay>: the kit is everything you're carrying. Delay: seconds, a length like 1d, 0, or "once". */
+    /** /createkit <name> <delay> [cost]: the kit is everything you're carrying. Delay: seconds, a length like 1d, 0, or "once". */
     static final class CreateKit extends EssCommand {
         CreateKit() {
             super("createkit", Perms.ADMIN, "ecreatekit", "kitcreate", "ekitcreate", "setkit", "esetkit");
@@ -224,34 +245,43 @@ public final class Kits {
         @Override
         protected void build(LiteralArgumentBuilder<CommandSourceStack> root) {
             root.then(Commands.argument("name", StringArgumentType.word()).suggests(NAMES)
-                    .then(Commands.argument("delay", StringArgumentType.word()).executes(exec(ctx -> {
-                        ServerPlayer me = self(ctx);
-                        String name = str(ctx, "name").toLowerCase(Locale.ROOT);
-                        String delayText = str(ctx, "delay").toLowerCase(Locale.ROOT);
-                        long delay;
-                        if (delayText.equals("once") || delayText.equals("-1")) {
-                            delay = -1;
-                        } else if (delayText.matches("\\d+")) {
-                            delay = Long.parseLong(delayText);
-                        } else {
-                            OptionalLong d = Durations.parse(delayText);
-                            if (d.isEmpty()) return fail(ctx, Messages.get("duration.invalid", delayText));
-                            delay = d.getAsLong() / 1000;
-                        }
-                        Kit kit = new Kit();
-                        kit.delay = delay;
-                        var inv = me.getInventory();
-                        for (int i = 0; i < inv.getContainerSize(); i++) {
-                            ItemStack s = inv.getItem(i);
-                            if (s.isEmpty()) continue;
-                            ItemStack.CODEC.encodeStart(ops(me.server), s).result().ifPresent(kit.items::add);
-                        }
-                        if (kit.items.isEmpty()) return fail(ctx, Messages.get("kit.emptyInventory"));
-                        boolean replaced = kits.put(name, kit) != null;
-                        save();
-                        reply(ctx, Messages.get(replaced ? "kit.replaced" : "kit.created", name, kit.items.size(), delayText(delay)));
-                        return 1;
-                    }))));
+                    .then(Commands.argument("delay", StringArgumentType.word()).executes(exec(ctx -> create(ctx, 0)))
+                            .then(textArg("cost").executes(exec(ctx -> {
+                                var v = dev.curatorium.essentials.economy.Money.parse(str(ctx, "cost"));
+                                if (v.isEmpty()) return fail(ctx, Messages.get("economy.badAmount", str(ctx, "cost")));
+                                return create(ctx, v.getAsLong());
+                            })))));
+        }
+
+        private int create(CommandContext<CommandSourceStack> ctx, long cost) throws CommandSyntaxException {
+            ServerPlayer me = self(ctx);
+            String name = str(ctx, "name").toLowerCase(Locale.ROOT);
+            String delayText = str(ctx, "delay").toLowerCase(Locale.ROOT);
+            long delay;
+            if (delayText.equals("once") || delayText.equals("-1")) {
+                delay = -1;
+            } else if (delayText.matches("\\d+")) {
+                delay = Long.parseLong(delayText);
+            } else {
+                OptionalLong d = Durations.parse(delayText);
+                if (d.isEmpty()) return fail(ctx, Messages.get("duration.invalid", delayText));
+                delay = d.getAsLong() / 1000;
+            }
+            Kit kit = new Kit();
+            kit.delay = delay;
+            kit.cost = cost;
+            var inv = me.getInventory();
+            for (int i = 0; i < inv.getContainerSize(); i++) {
+                ItemStack s = inv.getItem(i);
+                if (s.isEmpty()) continue;
+                ItemStack.CODEC.encodeStart(ops(me.server), s).result().ifPresent(kit.items::add);
+            }
+            if (kit.items.isEmpty()) return fail(ctx, Messages.get("kit.emptyInventory"));
+            boolean replaced = kits.put(name, kit) != null;
+            save();
+            reply(ctx, Messages.get(replaced ? "kit.replaced" : "kit.created", name, kit.items.size(), delayText(delay)));
+            if (cost > 0) reply(ctx, Messages.get("kit.costSet", dev.curatorium.essentials.economy.Money.format(cost)));
+            return 1;
         }
     }
 
@@ -284,6 +314,7 @@ public final class Kits {
                 Kit kit = kits.get(name);
                 if (kit == null) return fail(ctx, Messages.get("kit.unknown", name));
                 reply(ctx, Messages.get("kit.show", name, delayText(kit.delay)));
+                if (kit.cost > 0) reply(ctx, Messages.get("kit.showCost", dev.curatorium.essentials.economy.Money.format(kit.cost)));
                 for (ItemStack s : items(ctx.getSource().getServer(), kit)) {
                     reply(ctx, Messages.get("kit.showItem", s.getCount(), s.getHoverName()));
                 }

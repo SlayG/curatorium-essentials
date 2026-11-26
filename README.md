@@ -11,6 +11,10 @@ What's done and what's next: [PLAN.md](PLAN.md).
 
 ## Status
 
+**0.5.0, Phase 4 (economy).** Money is the Numismatics coins players carry: `/balance`, `/pay`
+(with change, and held until the next login for offline players), `/eco give|take`, kit and
+command prices, starting coins, and EssentialsX sign shops on vanilla signs (`[Buy]`, `[Sell]`, `[Trade]`, `[Kit]`, `[Warp]`, `[Heal]` and more).
+
 **0.4.0, Phase 3 (teleports and spawn).** Direct teleports (vanilla-compatible `/tp`), requests with
 clickable accept/deny, `/back` (also after death), homes and warps with GUIs, `/spawn` per LuckPerms
 group with respawning at spawn, random teleport, warmups that cancel on moving or damage, safe
@@ -39,7 +43,8 @@ is optional; without it, the economy is off. Nothing goes in the client pack.
 | `config/curatorium_essentials/motd.txt`, `rules.txt`, `info.txt`, `custom.txt` | Text for `/motd` (also shown on join), `/rules`, `/info` and `/customtext`. Lines starting with `#` start a chapter. |
 | `config/curatorium_essentials/config.toml` moderation, jail, items, world, kits sections | Mute-blocked commands, jail rules (allowed commands, radius, online-time sentences), item blacklist, `/clearinventory` confirmation, `/spawnmob` limit, the `/backup` script, the first-join kit. |
 | `config/curatorium_essentials/config.toml` teleport, homes, warps, spawn, tpr sections | Warmup, cooldown, safe spots, request timeout, home limits per group, per-warp permissions, first-join and respawn spawn, random-teleport range. |
-| `<world>/curatorium_essentials/` | Player data (`userdata/<uuid>.json`, homes included), `jails.json`, `kits.json`, `warps.json`, `spawns.json`, `tpr.json`. |
+| `config/curatorium_essentials/config.toml` economy section | Ender chest counting, starting coins, `/pay` confirmation and minimum, the shop-sign colour. |
+| `<world>/curatorium_essentials/` | Player data (`userdata/<uuid>.json`, homes and held coins included), `jails.json`, `kits.json`, `warps.json`, `spawns.json`, `tpr.json`. |
 | `logs/curatorium_essentials-economy.log` | Every coin taken or given by the mod. |
 
 ## Building

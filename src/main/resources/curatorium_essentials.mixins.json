@@ -8,6 +8,7 @@
     "PlayerListMixin",
     "ServerGamePacketListenerImplMixin",
     "ServerPlayerMixin",
+    "SignBlockEntityMixin",
     "TrackedEntityAccessor"
   ],
   "injectors": {

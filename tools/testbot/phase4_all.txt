@@ -1,0 +1,41 @@
+# Phase 4: economy on Numismatics coins. Alice is op, Bob isn't.
+console difficulty peaceful ;; time set day ;; clear Bob ;; clear Alice
+Bob /bal
+Alice /eco give Bob 1cog
+Bob /bal
+Bob /pay Alice 3
+Bob /bal
+Alice /bal
+Bob /pay Alice 3crown
+Bob /pay Bob 1
+Bob /pay Alice nonsense
+Alice /eco take Bob 1sprocket
+Bob /bal
+# ---- paying someone offline
+console eco give Alice 1cog
+disconnect Bob
+sleep 2
+Alice /pay Bob 1bevel
+Alice /eco give Bob 2spur
+reconnect Bob
+Bob /bal
+# ---- toggles
+Bob /paytoggle
+Alice /pay Bob 1
+Bob /paytoggle
+Bob /payconfirmtoggle
+Bob /pay Alice 1
+Bob /pay Alice 1
+Bob /payconfirmtoggle
+# ---- kit with a price
+console clear Alice ;; give Alice bread 4
+Alice /createkit snack 0 10
+Alice /showkit snack
+console lp user Bob permission set essentials.kits.snack true
+sleep 1
+Bob /kit snack
+Bob /bal
+console clear Bob
+Bob /kit snack
+Alice /delkit snack
+console lp user Bob permission unset essentials.kits.snack

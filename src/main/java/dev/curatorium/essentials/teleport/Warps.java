@@ -71,6 +71,12 @@ public final class Warps {
         JsonFile.write(FILE, warps);
     }
 
+    /** A warp's location, or null. */
+    public static Location location(String name) {
+        Warp w = warps.get(name);
+        return w == null ? null : w.location;
+    }
+
     static boolean mayUse(CommandSourceStack src, String name) {
         return !EssConfig.PER_WARP_PERMISSION.get() || Perms.has(src, "essentials.warps." + name, Perms.OP);
     }

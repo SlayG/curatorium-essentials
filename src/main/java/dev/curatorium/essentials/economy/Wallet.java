@@ -56,9 +56,47 @@ public final class Wallet {
         log(player, spurs, reason);
     }
 
+    /** Whether the stack is a Numismatics coin (never sold, priced or put in a shop). */
+    public static boolean isCoin(net.minecraft.world.item.ItemStack stack) {
+        return available() && NumismaticsCoins.isCoin(stack);
+    }
+
+    /**
+     * Holds coins for a player who is offline; they get them at their next login. The coins
+     * are already taken from whoever paid, so this only records what's owed.
+     */
+    public static void escrow(java.util.UUID id, String name, long spurs, String reason) {
+        if (spurs <= 0) return;
+        var d = dev.curatorium.essentials.data.UserStore.get(id);
+        d.escrow = Math.addExact(d.escrow, spurs);
+        d.escrowNotes.add(reason);
+        d.markDirty();
+        writeLog(String.format("%s %s (%s) owed %d spurs, held until next login: %s%n", LocalDateTime.now().format(TIME), name, id, spurs, reason));
+    }
+
+    /** At login: hands over any coins held for the player. Returns the amount (0 if none). */
+    public static long releaseEscrow(ServerPlayer player) {
+        var d = dev.curatorium.essentials.data.UserStore.get(player);
+        if (d.escrow <= 0 || !available()) return 0;
+        long amount = d.escrow;
+        d.escrow = 0;
+        d.escrowNotes.clear();
+        d.markDirty();
+        NumismaticsCoins.give(player, amount);
+        log(player.getGameProfile().getName(), player.getUUID(), amount, "coins held while offline");
+        return amount;
+    }
+
     private static void log(ServerPlayer player, long change, String reason) {
-        String line = String.format("%s %s (%s) %s%d spurs: %s%n", LocalDateTime.now().format(TIME),
-                player.getGameProfile().getName(), player.getUUID(), change >= 0 ? "+" : "", change, reason);
+        log(player.getGameProfile().getName(), player.getUUID(), change, reason);
+    }
+
+    private static void log(String name, java.util.UUID id, long change, String reason) {
+        writeLog(String.format("%s %s (%s) %s%d spurs: %s%n", LocalDateTime.now().format(TIME),
+                name, id, change >= 0 ? "+" : "", change, reason));
+    }
+
+    private static void writeLog(String line) {
         Path file = FMLPaths.GAMEDIR.get().resolve("logs").resolve("curatorium_essentials-economy.log");
         try {
             Files.createDirectories(file.getParent());

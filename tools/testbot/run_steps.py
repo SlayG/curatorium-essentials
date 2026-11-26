@@ -76,6 +76,11 @@ for line in open(STEPS if os.path.isfile(STEPS) else os.path.join(HERE, STEPS), 
         print("\n## %s uses held item" % cmd)
         bots[cmd].use()
         show()
+    elif who == "useon":
+        name, x, y, z, face = cmd.split()
+        print("\n## %s right-clicks %s %s %s" % (name, x, y, z))
+        bots[name].use_on(int(x), int(y), int(z), int(face))
+        show()
     elif who == "state":
         print("\n## state of %s: %s pos=%s" % (cmd, bots[cmd].state_info, [round(v, 1) for v in bots[cmd].pos or []]))
     elif who == "disconnect":

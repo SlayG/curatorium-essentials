@@ -24,9 +24,9 @@ Numismatics instead of Vault), Discord and Discord Link.
 ## Still open (answer before the phase that needs it)
 
 1. ~~Do homes, warps and `/spawn` count as "teleport"?~~ **Decided (2026-11-26): yes.** Every teleport command, homes, warps and `/spawn` included, is op-only by default.
-2. **Paying offline players (Phase 4).** With physical coins only, `/pay` and `/eco give` need the recipient online, since the coins go into their inventory. Default: refuse if they're offline. Alternative: hold the coins and hand them over at their next login.
-3. **`/balancetop` (Phase 4).** Only coins a player carries can be counted, not coins in chests. Default: rank online players by carried coins, plus each offline player's carried coins at their last logout, labelled "carried coins". Alternative: leave `/balancetop` out.
-4. **Ender chest (Phase 4).** Default: coins in the ender chest are not counted or spent. Can be switched on in config.
+2. ~~Paying offline players.~~ **Decided (2026-11-26): hold the coins in escrow** and hand them over at the recipient's next login.
+3. ~~`/balancetop`.~~ **Decided (2026-11-26): left out.**
+4. ~~Ender chest.~~ **Decided (2026-11-26): not counted or spent** (`economy.countEnderChest` stays off by default).
 5. **Discord bot.** Needs a bot application on the Discord developer portal and a token pasted into the config (the user does this; the token never goes in chat or the repo).
 
 ## How server-only works here
@@ -50,7 +50,7 @@ replacing vanilla commands. These get tested with Phase 1.
 
 - Gradle project copied from `curatorium-exchange`'s setup; compiles against `C:/Creatorium/Mod Repo` (Numismatics) and the LuckPerms API from Maven (`net.luckperms:api`, compile-only).
 - LuckPerms for NeoForge goes in `Mod Repo` for local testing (only needed to run, not to build). Use 5.4.150; see Phase 1.
-- **Data**: per-player JSON at `<world>/curatorium_essentials/userdata/<uuid>.json` (homes, nick, mail, ignores, mute/jail state, last location, playtime, flags); `warps/`, `jails.json`, `kits.json`, `worth.json`, `spawn.json`. Saved asynchronously, flushed on stop.
+- **Data**: per-player JSON at `<world>/curatorium_essentials/userdata/<uuid>.json` (homes, nick, mail, ignores, mute/jail state, last location, playtime, flags); `warps/`, `jails.json`, `kits.json`, `spawn.json`. Saved asynchronously, flushed on stop.
 - **Config**: `config/curatorium_essentials/` — `config.toml` (mirrors EssentialsX `config.yml` sections), `chat.toml`, `economy.toml`, `discord.toml`, `messages.properties`, `motd.txt`, `rules.txt`, `info.txt`.
 - **Permission layer**: registers every node with the NeoForge PermissionAPI, with a default (op level or everyone). LuckPerms then overrides per group. Ships a `luckperms-defaults.md` with the commands to set up `default` and `staff` groups.
 - **Shared services**: cooldowns and warmups, command costs, player lookup (online/offline, by nick), user cache, `/essentials reload`, `/essentials version`.
@@ -146,7 +146,26 @@ Planned:
 - Teleport warmup (cancel on move/damage), cooldown, and safe-location checks.
 - Safety hook to Curatorium Claims: block teleports into or out of a claim under siege, even for op-granted users, unless they have `essentials.teleport.bypass-siege` (only matters if teleport is ever opened up).
 
-## Phase 4 — Economy on physical Numismatics coins (0.5.0)
+## Phase 4 — Economy on physical Numismatics coins (0.5.0) — done
+
+Tested on the dev server (now running Create 6.0.10 and Numismatics 1.1.0) with two bot players.
+The bot had to learn NeoForge's login handshake for that: a server with Create refuses vanilla
+clients. What was tested: /balance; /pay, including change (3 spurs paid from a cog leaves
+61 in smaller coins), confirmation and refusals; paying and /eco give to an offline player (held,
+then handed over at login with who sent what); /paytoggle; /eco take; a kit with a price; sign shops written
+through the sign editor by an op: [Buy], [Sell], [Trade], [Heal], [Balance], [Free], [Disposal],
+refusing invalid signs and non-ops' signs; the economy log; breaking shop signs (a non-op is
+refused in survival and creative, an op can, plain signs aren't protected); starting coins on a
+first join only. Tested in a real client: /eco give and every sign kind, including [Kit], [Warp],
+[Time], [Weather], [Enchant], [Repair], [Spawnmob] and [Gamemode].
+
+Notes from building it:
+- Paying someone offline (and /eco give) takes the coins now and holds them in the player's data; they get them, with a line per payment, at their next login.
+- /balancetop is left out, and ender chests aren't counted (decisions above).
+- Sign shops are admin shops. A sign works only when someone with `essentials.signs.create.<kind>` writes it: its first line turns `economy.signColor` and it's waxed. Every edit is checked again, since vanilla keeps a line's colour when the text changes. Breaking one needs `essentials.signs.break`.
+- /worth, /setworth and /sell were built and then removed: the server won't use them. The [Sell] sign stays, with its price on the sign.
+
+Planned:
 
 Money is only the coin items players carry: spur = 1, bevel = 8, sprocket = 16, cog = 64,
 crown = 512, sun = 4096 (spurs). The mod keeps no balances of its own and doesn't touch
@@ -162,7 +181,7 @@ Numismatics bank accounts.
 - `pay`: moves coins from the payer's inventory into the recipient's, both online (see open question 2); `paytoggle`, `payconfirmtoggle`.
 - `eco give` (mints coins into a player's inventory) and `eco take` (removes coins), admin-only. `eco set`/`eco reset` are dropped, since they only make sense for virtual balances.
 - Amounts are typed as spurs (`1664`) or with coin names (`3crown 2cog`).
-- `worth`, `setworth`, `sell` (hand, inventory, by item) using `worth.json`: the items are taken and coins given.
+- ~~`worth`, `setworth`, `sell`~~ — dropped, not wanted on the server.
 - Sign shops on vanilla signs: `[Buy]`, `[Sell]`, `[Trade]`, `[Kit]`, `[Warp]`, `[Heal]`, `[Free]`, `[Disposal]`, `[Balance]`, `[Time]`, `[Weather]`, `[Enchant]`, `[Repair]`, plus `[Spawnmob]`/`[Gamemode]` for admins. Creating each kind needs a permission. Prices are taken from and paid into the clicking player's inventory.
 - Command costs and kit costs, paid from the inventory; the command doesn't run if the player can't pay.
 - "Starting balance" becomes a starting coin kit given on first join.
