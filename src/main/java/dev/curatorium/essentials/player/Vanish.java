@@ -83,6 +83,7 @@ public final class Vanish {
             }
         }
         Names.refresh(p);
+        dev.curatorium.essentials.discord.DiscordCommands.vanished(p, vanished);
     }
 
     private static ClientboundPlayerInfoRemovePacket remove(ServerPlayer p) {

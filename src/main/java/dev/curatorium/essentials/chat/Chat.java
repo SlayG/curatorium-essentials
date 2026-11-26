@@ -82,6 +82,8 @@ public final class Chat {
             if (p != sender) heard.add(p);
         }
         server.sendSystemMessage(line);
+        // Local and question chat stay in game; normal chat and shouts go to Discord.
+        if (kind == Kind.NORMAL || kind == Kind.SHOUT) dev.curatorium.essentials.discord.Discord.chat(sender, text);
         if (kind == Kind.LOCAL && heard.isEmpty()) sender.sendSystemMessage(Messages.get("chat.nobodyHears"));
     }
 

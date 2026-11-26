@@ -192,3 +192,14 @@ lp group default permission set essentials.spawn true
 | `essentials.signs.create.<kind>` | Writing a working shop sign of that kind (`buy`, `sell`, `trade`, `kit`, `warp`, `heal`, `free`, `disposal`, `balance`, `time`, `weather`, `enchant`, `repair`, `spawnmob`, `gamemode`) | op 2 |
 | `essentials.signs.use.<kind>` | Using one | everyone, except `warp` (teleports are op-only), `spawnmob` and `gamemode`: op 2 |
 | `essentials.signs.break` | Breaking a shop sign | op 2 |
+
+## Nodes (0.6.0: Discord)
+
+| Node | What it allows | Default |
+|---|---|---|
+| `essentials.discord` | `/discord`, the invite link | everyone |
+| `essentials.discordbroadcast` | `/discordbroadcast <chat\|staff\|console\|id> <message>` | op 2 |
+
+Who can run server commands from Discord (`/execute` and the console channel) isn't a LuckPerms
+node: it's the Discord roles listed in `commandRoles` in `discord.toml`. Discord staff-channel
+messages reach players with `essentials.helpop.receive`.

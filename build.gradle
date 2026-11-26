@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'net.neoforged.moddev' version '2.0.78'
+    id 'com.gradleup.shadow' version '8.3.9'
 }
 
 version = mod_version
@@ -27,6 +28,19 @@ repositories {
 
 def serverMods = file(project.server_mods_dir)
 
+// JDA (the Discord library), bundled into the jar and relocated under dev.curatorium.essentials.lib
+// so it can't clash with another mod's copy. Voice isn't used, so its audio and encryption
+// libraries are left out; slf4j comes with Minecraft.
+configurations {
+    bundled
+    implementation.extendsFrom bundled
+}
+def jda = { dep ->
+    dep.exclude group: 'club.minnced', module: 'opus-java'
+    dep.exclude group: 'com.google.crypto.tink'
+    dep.exclude group: 'org.slf4j'
+}
+
 dependencies {
     // Compile against the exact jars the server runs. Both are optional at runtime.
     compileOnly fileTree(dir: serverMods, include: [
@@ -35,7 +49,26 @@ dependencies {
     ])
     // LuckPerms: its public API, from Maven Central. The mod itself is installed on the server.
     compileOnly 'net.luckperms:api:5.4'
+
+    bundled('net.dv8tion:JDA:6.7.0', jda)
+    // The dev server loads JDA unrelocated from the classpath.
+    additionalRuntimeClasspath('net.dv8tion:JDA:6.7.0', jda)
 }
+
+def relocated = 'dev.curatorium.essentials.lib'
+tasks.named('shadowJar') {
+    archiveClassifier = ''
+    configurations = [project.configurations.bundled]
+    ['net.dv8tion', 'com.neovisionaries', 'okhttp3', 'okio', 'kotlin', 'com.fasterxml',
+     'org.apache.commons.collections4', 'gnu.trove', 'org.jetbrains', 'org.intellij'].each {
+        relocate it, "${relocated}.${it}"
+    }
+    exclude 'META-INF/versions/9/module-info.class', 'module-info.class', 'META-INF/maven/**',
+            'META-INF/*.kotlin_module', 'DebugProbesKt.bin'
+    mergeServiceFiles()
+}
+tasks.named('jar') { archiveClassifier = 'slim' }
+tasks.named('assemble') { dependsOn 'shadowJar' }
 
 // Fills ${...} in neoforge.mods.toml from gradle.properties.
 tasks.named('processResources', ProcessResources) {

@@ -27,7 +27,7 @@ Numismatics instead of Vault), Discord and Discord Link.
 2. ~~Paying offline players.~~ **Decided (2026-11-26): hold the coins in escrow** and hand them over at the recipient's next login.
 3. ~~`/balancetop`.~~ **Decided (2026-11-26): left out.**
 4. ~~Ender chest.~~ **Decided (2026-11-26): not counted or spent** (`economy.countEnderChest` stays off by default).
-5. **Discord bot.** Needs a bot application on the Discord developer portal and a token pasted into the config (the user does this; the token never goes in chat or the repo).
+5. ~~Discord bot.~~ **Done (2026-11-26):** the bot (Ashru) exists and its token is in the dev server's `discord.toml`, which is never committed.
 
 ## How server-only works here
 
@@ -186,7 +186,29 @@ Numismatics bank accounts.
 - Command costs and kit costs, paid from the inventory; the command doesn't run if the player can't pay.
 - "Starting balance" becomes a starting coin kit given on first join.
 
-## Phase 5 — Discord (0.6.0)
+## Phase 5 — Discord (0.6.0) — done
+
+Tested on the dev server against the real Discord server (Curatorium of Secrets), with three test
+threads as the chat, staff and console channels: the bot logs in, finds its channels and registers
+its slash commands; in-game chat (shouts, since the dev server has local chat on), join, leave,
+death, /helpop, /broadcast and /discordbroadcast arrive in the right channel, with `@everyone` not
+pinging and markdown escaped; Discord chat and staff messages reach the game; /list, /msg and
+/execute work; commands typed in the console channel by a command role run and are logged with the
+member's name. The release jar (JDA relocated) was also run on a plain NeoForge 21.1.265 server with
+Create, Numismatics and LuckPerms: it logs in and relays chat. Then, with real text channels:
+webhook chat with the player's name and head, an advancement, mute/unmute, kick, ban/unban and
+jail/release posts in the staff channel, /discord's invite link, and turning the bot on by saving
+the config. Not tested yet: refusing /execute to someone without a command role.
+
+Notes from building it:
+- JDA 6.7.0 is bundled under `dev.curatorium.essentials.lib`; its voice libraries are left out. The jar is 13.6 MB.
+- `config/curatorium_essentials/discord.toml` holds the token (or the `CURATORIUM_DISCORD_TOKEN` environment variable). Saving it with a new token, or turning the bot on or off, restarts the bot without a server restart.
+- The bot needs the Message Content Intent turned on; without it Discord refuses the login and the log says so.
+- Threads work as channels, but chat posted there comes from the bot (`**name**: message`), not a webhook with the player's head, and Discord archives quiet threads. Use text channels on the live server.
+- `commandRoles` empty means nobody can run commands from Discord.
+- "Respects ignore and the chat filter": the mod has no chat filter of its own; Discord only gets chat that other mods and mutes let through. Ignores are between players, and Discord users aren't players, so they don't apply.
+
+Planned:
 
 Bundles JDA (the Java Discord library EssentialsX Discord uses), shaded and relocated into the
 jar (~8–10 MB larger).

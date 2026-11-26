@@ -272,6 +272,8 @@ public final class MessagingCommands {
                     }
                 }
                 src.getServer().sendSystemMessage(line);
+                dev.curatorium.essentials.discord.Discord.send("helpop", dev.curatorium.essentials.discord.Discord.fill("discord.out.helpop",
+                        dev.curatorium.essentials.discord.Discord.escape(name.getString()), dev.curatorium.essentials.discord.Discord.escape(str(ctx, "message"))));
                 if (from != null && !selfSees) from.sendSystemMessage(Messages.get("helpop.sent"));
                 return 1;
             })));
@@ -289,6 +291,8 @@ public final class MessagingCommands {
             root.then(textArg("message").executes(exec(ctx -> {
                 Component line = Messages.get("broadcast.format", Text.format(str(ctx, "message")));
                 ctx.getSource().getServer().getPlayerList().broadcastSystemMessage(line, false);
+                dev.curatorium.essentials.discord.Discord.send("broadcast", dev.curatorium.essentials.discord.Discord.fill("discord.out.broadcast",
+                        Text.plain(str(ctx, "message"))));
                 return 1;
             })));
         }

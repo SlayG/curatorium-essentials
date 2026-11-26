@@ -12,6 +12,7 @@ public final class Notify {
             if (Perms.has(p, node, Perms.OP)) p.sendSystemMessage(message);
         }
         server.sendSystemMessage(message);
+        dev.curatorium.essentials.discord.DiscordCommands.staffNotice(node, message);
     }
 
     private Notify() {}

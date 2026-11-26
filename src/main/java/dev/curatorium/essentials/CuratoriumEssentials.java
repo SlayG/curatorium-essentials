@@ -9,6 +9,9 @@ import dev.curatorium.essentials.commands.FunCommands;
 import dev.curatorium.essentials.commands.StateCommands;
 import dev.curatorium.essentials.commands.WorkstationCommands;
 import dev.curatorium.essentials.commands.WorldCommands;
+import dev.curatorium.essentials.discord.Discord;
+import dev.curatorium.essentials.discord.DiscordCommands;
+import dev.curatorium.essentials.discord.DiscordConfig;
 import dev.curatorium.essentials.economy.EconomyCommands;
 import dev.curatorium.essentials.economy.Signs;
 import dev.curatorium.essentials.kits.Kits;
@@ -66,6 +69,7 @@ public final class CuratoriumEssentials {
     public CuratoriumEssentials(IEventBus modBus, ModContainer container) {
         version = container.getModInfo().getVersion().toString();
         container.registerConfig(ModConfig.Type.COMMON, EssConfig.SPEC, "curatorium_essentials/config.toml");
+        container.registerConfig(ModConfig.Type.COMMON, DiscordConfig.SPEC, "curatorium_essentials/discord.toml");
         modBus.addListener(ModConfigEvent.Loading.class, e -> onConfig(e.getConfig()));
         modBus.addListener(ModConfigEvent.Reloading.class, e -> onConfig(e.getConfig()));
 
@@ -91,6 +95,7 @@ public final class CuratoriumEssentials {
         Spawns.register();
         RandomTeleport.register();
         EconomyCommands.register();
+        DiscordCommands.register();
 
         IEventBus bus = NeoForge.EVENT_BUS;
         Chat.registerEvents(bus);
@@ -113,6 +118,7 @@ public final class CuratoriumEssentials {
         RandomTeleport.registerEvents(bus);
         EconomyCommands.registerEvents(bus);
         Signs.registerEvents(bus);
+        DiscordCommands.registerEvents(bus);
         bus.addListener(RegisterCommandsEvent.class, e -> CommandRegistry.registerAll(e.getDispatcher(), e.getBuildContext()));
         bus.addListener(ServerAboutToStartEvent.class, e -> {
             server = e.getServer();
@@ -126,6 +132,7 @@ public final class CuratoriumEssentials {
 
     private static void onConfig(ModConfig config) {
         if (config.getSpec() == EssConfig.SPEC) EssConfig.bake();
+        if (config.getSpec() == DiscordConfig.SPEC) Discord.onConfigReload();
     }
 
     /** The running server, or null before it starts / after it stops. */
