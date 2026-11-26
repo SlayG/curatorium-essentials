@@ -126,8 +126,8 @@ player's with `player:home`, `bed`); warps (set, move, info, GUI, sending someon
 /tpahere, /tpaall, accept and deny by name or newest, /tpacancel, /tpauto, clickable buttons);
 /tptoggle; the warmup (cancelled by moving or by damage). Then checked in a real vanilla client:
 the home and warp GUIs, safe landings, /back after death, /tpr, the warmup, and /tpa and /tpahere
-with the clickable buttons. Not tested yet: per-group spawns and the first-join spawn with a real
-new player, the End with /world.
+with the clickable buttons. /world to the End tested in a real client (2026-11-26). Not tested yet:
+per-group spawns and the first-join spawn with a real new player.
 
 Siege block tested 2026-11-26 with Curatorium Claims 1.3.1 and a real siege (an op bot as the
 defender, a Siege Engine powered by a Creative Motor): during the attack every teleport into or
@@ -231,8 +231,8 @@ jar (~8–10 MB larger).
 
 Tested on the dev server with the real Discord server: linking with a code from /link (slash
 command), unlinking, a LuckPerms group giving a Discord role (`groupsToRoles`) and unlinking taking
-it away, and "must link to join" refusing an unlinked bot player at login with its code. Not tested
-yet: a Discord role putting a player in a group (`rolesToGroups`), linking by direct message,
+it away, a Discord role putting a player in a group (`rolesToGroups`), and "must link to join"
+refusing an unlinked bot player at login with its code. Not tested yet: linking by direct message,
 nickname sync, the member intent, and the 10-minute resync.
 
 Notes from building it:
