@@ -3,6 +3,9 @@ loaderVersion="[4,)"
 license="GPL-3.0-only"
 issueTrackerURL="https://github.com/SlayG/curatorium-essentials/issues"
 
+[[mixins]]
+config="curatorium_essentials.mixins.json"
+
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"

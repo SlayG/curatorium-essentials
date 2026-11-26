@@ -45,6 +45,39 @@ public final class UserData {
     /** Every chat message shouts, with local chat on (/toggleshout). */
     public boolean shout;
 
+    // ------------------------------------------------------------ moderation (Phase 2)
+    /** Epoch millis when the mute ends; 0 = not muted, -1 = muted until unmuted. */
+    public long muteUntil;
+    public String muteReason;
+    /** Name of the jail the player is in, or null. */
+    public String jail;
+    /** Real-time jail: epoch millis of release. Online-time jail: 0 (see {@link #jailLeft}). 0 with jailLeft 0 = no end. */
+    public long jailUntil;
+    /** Online-time jail: millis of online time still to serve; 0 = not counting online time. */
+    public long jailLeft;
+    public String jailReason;
+    /** Where the player was when jailed; they go back there on release. */
+    public Location preJailLocation;
+
+    // ------------------------------------------------------------ player state (Phase 2)
+    public boolean vanished;
+    public boolean god;
+    public boolean fly;
+    /** Item id -> commands that item runs when used (/powertool). */
+    public Map<String, List<String>> powertools = new HashMap<>();
+    /** /powertooltoggle: power tools only run while this is on. */
+    public boolean powertoolsEnabled = true;
+    /** Item ids this player never runs out of when placing (/unlimited). */
+    public Set<String> unlimited = new HashSet<>();
+    /** /clearinventoryconfirmtoggle; null = the config default. */
+    public Boolean clearConfirm;
+    /** Kit name -> epoch millis of the last time it was taken. */
+    public Map<String, Long> kitsUsed = new HashMap<>();
+
+    public boolean isMuted(long now) {
+        return muteUntil == -1 || muteUntil > now;
+    }
+
     /** A message left with /mail. */
     public static final class Mail {
         /** Null when sent from the console. */
@@ -76,6 +109,9 @@ public final class UserData {
         if (lastIp == null) lastIp = "";
         if (ignored == null) ignored = new HashSet<>();
         if (mail == null) mail = new ArrayList<>();
+        if (powertools == null) powertools = new HashMap<>();
+        if (unlimited == null) unlimited = new HashSet<>();
+        if (kitsUsed == null) kitsUsed = new HashMap<>();
         mail.removeIf(m -> m == null || m.message == null);
         long now = System.currentTimeMillis();
         mail.removeIf(m -> m.expired(now));

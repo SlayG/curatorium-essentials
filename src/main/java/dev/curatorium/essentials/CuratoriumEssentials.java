@@ -4,9 +4,20 @@ import dev.curatorium.essentials.chat.Chat;
 import dev.curatorium.essentials.command.CommandRegistry;
 import dev.curatorium.essentials.commands.EssentialsCommand;
 import dev.curatorium.essentials.commands.InfoCommands;
+import dev.curatorium.essentials.commands.ItemCommands;
+import dev.curatorium.essentials.commands.FunCommands;
+import dev.curatorium.essentials.commands.StateCommands;
+import dev.curatorium.essentials.commands.WorkstationCommands;
+import dev.curatorium.essentials.commands.WorldCommands;
+import dev.curatorium.essentials.kits.Kits;
 import dev.curatorium.essentials.commands.MessagingCommands;
 import dev.curatorium.essentials.commands.PlayerCommands;
+import dev.curatorium.essentials.moderation.Bans;
+import dev.curatorium.essentials.moderation.Jails;
+import dev.curatorium.essentials.moderation.Mutes;
 import dev.curatorium.essentials.player.Afk;
+import dev.curatorium.essentials.player.Vanish;
+import dev.curatorium.essentials.util.Tasks;
 import dev.curatorium.essentials.player.Names;
 import dev.curatorium.essentials.text.TextFiles;
 import dev.curatorium.essentials.config.EssConfig;
@@ -55,6 +66,15 @@ public final class CuratoriumEssentials {
         MessagingCommands.register();
         PlayerCommands.register();
         InfoCommands.register();
+        Bans.register();
+        Mutes.register();
+        Jails.register();
+        StateCommands.register();
+        ItemCommands.register();
+        WorkstationCommands.register();
+        WorldCommands.register();
+        FunCommands.register();
+        Kits.register();
 
         IEventBus bus = NeoForge.EVENT_BUS;
         Chat.registerEvents(bus);
@@ -62,7 +82,15 @@ public final class CuratoriumEssentials {
         Afk.registerEvents(bus);
         PlayerCommands.registerEvents(bus);
         InfoCommands.registerEvents(bus);
-        bus.addListener(RegisterCommandsEvent.class, e -> CommandRegistry.registerAll(e.getDispatcher()));
+        Tasks.registerEvents(bus);
+        Mutes.registerEvents(bus);
+        Jails.registerEvents(bus);
+        Vanish.registerEvents(bus);
+        StateCommands.registerEvents(bus);
+        ItemCommands.registerEvents(bus);
+        WorldCommands.registerEvents(bus);
+        Kits.registerEvents(bus);
+        bus.addListener(RegisterCommandsEvent.class, e -> CommandRegistry.registerAll(e.getDispatcher(), e.getBuildContext()));
         bus.addListener(ServerAboutToStartEvent.class, e -> {
             server = e.getServer();
             UserStore.open(server);
@@ -91,6 +119,7 @@ public final class CuratoriumEssentials {
         EssConfig.bake();
         Messages.load();
         TextFiles.reload();
+        ItemCommands.onReload();
         if (server != null) {
             server.getPlayerList().getPlayers().forEach(p -> {
                 server.getCommands().sendCommands(p);

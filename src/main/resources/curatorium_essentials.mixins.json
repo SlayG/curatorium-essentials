@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.curatorium.essentials.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ChunkMapAccessor",
+    "PlayerListMixin",
+    "ServerGamePacketListenerImplMixin",
+    "ServerPlayerMixin",
+    "TrackedEntityAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

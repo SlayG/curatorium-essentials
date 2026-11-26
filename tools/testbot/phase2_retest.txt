@@ -1,0 +1,34 @@
+# Re-test after fixes. Peaceful and daytime so mobs don't interfere.
+console difficulty peaceful ;; time set day
+Alice /kick Bob testing the kick
+reconnect Bob
+Alice /mute Bob 10s
+Bob hello
+Alice /setjail cell
+Alice /togglejail Bob cell 1m
+state Bob
+move Bob 5
+sleep 1
+state Bob
+Alice /togglejail Bob
+Alice /vanish
+disconnect Alice
+reconnect Alice
+reconnect Bob
+Bob /list
+Alice /vanish off
+Alice /exp give Bob 5L
+Alice /exp take Bob 10
+Alice /exp set Bob 100
+Alice /weather rain
+Alice /pweather clear Bob
+sleep 2
+state Bob
+Alice /pweather reset Bob
+Alice /weather clear
+Alice /clearinventoryconfirmtoggle
+Alice /give Bob diamond 5
+Alice /clearinventory Bob diamond 2
+Alice /invsee Bob
+click Alice 27
+close Alice

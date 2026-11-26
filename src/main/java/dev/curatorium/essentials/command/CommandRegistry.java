@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 
@@ -40,7 +41,15 @@ public final class CommandRegistry {
         return LABELS.get(label);
     }
 
-    public static void registerAll(CommandDispatcher<CommandSourceStack> dispatcher) {
+    private static CommandBuildContext buildContext;
+
+    static CommandBuildContext buildContext() {
+        if (buildContext == null) throw new IllegalStateException("commands aren't being registered");
+        return buildContext;
+    }
+
+    public static void registerAll(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context) {
+        buildContext = context;
         LABELS.clear();
         int count = 0;
         for (EssCommand command : COMMANDS) {

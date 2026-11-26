@@ -151,6 +151,7 @@ public final class PlayerCommands {
         }
 
         private int send(CommandContext<CommandSourceStack> ctx, PlayerLookup.Target to, String message, long expiresIn) {
+            if (ctx.getSource().getPlayer() != null && dev.curatorium.essentials.moderation.Mutes.checkMuted(ctx.getSource().getPlayer())) return 0;
             if (rateLimited(ctx)) return fail(ctx, Messages.get("mail.tooFast"));
             UserData target = UserStore.get(to.uuid());
             ServerPlayer me = ctx.getSource().getPlayer();
@@ -166,6 +167,7 @@ public final class PlayerCommands {
         }
 
         private int sendAll(CommandContext<CommandSourceStack> ctx) {
+            if (ctx.getSource().getPlayer() != null && dev.curatorium.essentials.moderation.Mutes.checkMuted(ctx.getSource().getPlayer())) return 0;
             String message = str(ctx, "message");
             int count = 0;
             for (UUID id : UserStore.allKnown()) {
@@ -196,7 +198,7 @@ public final class PlayerCommands {
                         String text = str(ctx, "message");
                         String first = text.split(" ", 2)[0];
                         if (has(ctx.getSource(), "others", Perms.OP)) {
-                            var other = PlayerLookup.online(ctx.getSource().getServer(), first);
+                            var other = PlayerLookup.online(ctx.getSource(), first);
                             if (other.isPresent() && other.get() != ctx.getSource().getPlayer()
                                     && other.get().getGameProfile().getName().equalsIgnoreCase(first)) {
                                 String rest = text.length() > first.length() ? text.substring(first.length()).trim() : null;
@@ -233,8 +235,7 @@ public final class PlayerCommands {
                 if (parts.length == 1) return set(ctx, self(ctx), parts[0]);
                 if (parts.length != 2) return fail(ctx, Messages.get("nick.usage"));
                 if (!has(ctx.getSource(), "others", Perms.OP)) return fail(ctx, Messages.get("command.noPermission"));
-                ServerPlayer target = PlayerLookup.online(ctx.getSource().getServer(), parts[0])
-                        .orElseThrow(() -> error(Messages.get("player.notOnline", parts[0])));
+                ServerPlayer target = online(ctx.getSource(), parts[0]);
                 return set(ctx, target, parts[1]);
             })));
         }

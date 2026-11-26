@@ -118,9 +118,27 @@ def flatten(c):
     return str(c)
 
 
+def offline_uuid(name):
+    return uuid.UUID(bytes=hashlib.md5(("OfflinePlayer:" + name).encode()).digest(), version=3)
+
+
+# Names to recognise in player-info and entity packets (filled in as bots are created).
+KNOWN = {}
+
+MENUS = ["generic_9x1", "generic_9x2", "generic_9x3", "generic_9x4", "generic_9x5", "generic_9x6", "generic_3x3",
+         "crafter_3x3", "anvil", "beacon", "blast_furnace", "brewing_stand", "crafting", "enchantment", "furnace",
+         "grindstone", "hopper", "lectern", "loom", "merchant", "shulker_box", "smithing", "smoker",
+         "cartography_table", "stonecutter"]
+
+
 class Bot:
     def __init__(self, name, port, host="127.0.0.1"):
         self.name = name
+        KNOWN[offline_uuid(name)] = name
+        self.entities = {}  # entity id -> player name, for players we know
+        self.window = 0
+        self.state_info = {}
+        self.seq = 0
         self.messages = []
         self.lock = threading.Lock()
         self.threshold = -1
@@ -177,7 +195,10 @@ class Bot:
         try:
             while self.alive:
                 pid, b = self.read_packet()
-                getattr(self, "on_" + self.state)(pid, b)
+                try:
+                    getattr(self, "on_" + self.state)(pid, b)
+                except (ValueError, IndexError, struct.error) as e:
+                    self.event("[could not read packet 0x%02X: %s]" % (pid, e))
         except Exception as e:  # noqa
             if self.disconnect_reason is None:
                 self.disconnect_reason = "connection closed: %r" % (e,)
@@ -249,11 +270,78 @@ class Bot:
             self.pos = [x, y, z]
             self.send_raw(0x00, varint(tid))
             self.ready.set()
+        elif pid == 0x01:  # add entity
+            eid = b.varint()
+            u = uuid.UUID(bytes=b.read(16))
+            if u in KNOWN:
+                self.entities[eid] = KNOWN[u]
+                self.event("[sees entity %s]" % KNOWN[u])
+        elif pid == 0x42:  # remove entities
+            for _ in range(b.varint()):
+                eid = b.varint()
+                if eid in self.entities:
+                    self.event("[entity gone %s]" % self.entities.pop(eid))
+        elif pid == 0x3D:  # player info remove
+            names = [KNOWN.get(uuid.UUID(bytes=b.read(16)), "?") for _ in range(b.varint())]
+            self.event("[tab remove %s]" % ",".join(names))
+        elif pid == 0x3E:  # player info update
+            actions = b.u("B")
+            if actions & 1:  # ADD_PLAYER: first entry's uuid follows the count
+                n = b.varint()
+                u = uuid.UUID(bytes=b.read(16))
+                self.event("[tab add %s%s]" % (KNOWN.get(u, "?"), "" if n == 1 else " +%d" % (n - 1)))
+        elif pid == 0x33:  # open screen
+            self.window = b.varint()
+            mtype = b.varint()
+            title = flatten(read_nbt(b))
+            self.event("[open %s \"%s\"]" % (MENUS[mtype] if 0 <= mtype < len(MENUS) else mtype, title))
+        elif pid == 0x12:  # container close
+            self.event("[screen closed]")
+        elif pid == 0x5D:  # set health
+            self.state_info["health"] = round(b.u("f"), 1)
+            self.state_info["food"] = b.varint()
+            if self.state_info["health"] <= 0:
+                self.event("[died; respawning]")
+                self.send_raw(0x09, varint(0))  # client command: respawn
+        elif pid == 0x64:  # set time
+            b.u("q")
+            self.state_info["time"] = b.u("q")
+        elif pid == 0x22:  # game event
+            ev = b.u("B")
+            v = b.u("f")
+            if ev in (1, 2):  # 1 = start raining, 2 = stop
+                self.state_info["raining"] = ev == 1
+            elif ev == 7:
+                self.state_info["rain"] = round(v, 2)
+            elif ev == 8:
+                self.state_info["thunder"] = round(v, 2)
+            elif ev == 3:
+                self.state_info["gamemode"] = int(v)
+        elif pid == 0x38:  # abilities
+            flags = b.u("b")
+            self.state_info["mayfly"] = bool(flags & 4)
+            self.state_info["flyspeed"] = round(b.u("f"), 3)
         elif pid == 0x0C:  # chunk batch finished
             b.varint()
             self.send_raw(0x08, struct.pack(">f", 20.0))
 
+    def event(self, text):
+        with self.lock:
+            self.messages.append(text)
+
     # ---------------------------------------------------------------- actions
+    def click(self, slot):
+        # window, state id, slot, button, mode (pickup), no changed slots, nothing carried
+        self.send_raw(0x0E, struct.pack(">b", self.window) + varint(0) + struct.pack(">hb", slot, 0)
+                      + varint(0) + varint(0) + varint(0))
+
+    def close_screen(self):
+        self.send_raw(0x0F, struct.pack(">b", self.window))
+
+    def use(self):
+        self.seq += 1
+        self.send_raw(0x39, varint(0) + varint(self.seq) + struct.pack(">ff", 0.0, 0.0))
+
     def command(self, cmd):
         self.send_raw(0x04, mcstr(cmd.lstrip("/")))
 

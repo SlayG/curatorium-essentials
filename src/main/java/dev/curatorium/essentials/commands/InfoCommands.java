@@ -87,6 +87,7 @@ public final class InfoCommands {
             root.executes(exec(ctx -> {
                 MinecraftServer server = ctx.getSource().getServer();
                 List<ServerPlayer> players = new ArrayList<>(server.getPlayerList().getPlayers());
+                players.removeIf(p -> !dev.curatorium.essentials.player.Vanish.canSee(ctx.getSource(), p));
                 players.sort(Comparator.comparing(p -> p.getGameProfile().getName(), String.CASE_INSENSITIVE_ORDER));
                 reply(ctx, Messages.get("list.header", players.size(), server.getMaxPlayers()));
                 Map<String, List<ServerPlayer>> groups = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -100,6 +101,7 @@ public final class InfoCommands {
                     for (ServerPlayer p : entry.getValue()) {
                         if (!first) names.append(Messages.get("list.separator"));
                         first = false;
+                        if (dev.curatorium.essentials.player.Vanish.isVanished(p)) names.append(Messages.get("list.vanished"));
                         if (Afk.isAfk(p)) names.append(Messages.get("list.afk"));
                         names.append(p.getDisplayName());
                     }
@@ -468,7 +470,8 @@ public final class InfoCommands {
             double r2 = (double) radius * radius;
             List<ServerPlayer> near = new ArrayList<>();
             for (ServerPlayer p : center.serverLevel().players()) {
-                if (p != center && p.distanceToSqr(center) <= r2) near.add(p);
+                if (p != center && p.distanceToSqr(center) <= r2
+                        && dev.curatorium.essentials.player.Vanish.canSee(ctx.getSource(), p)) near.add(p);
             }
             near.sort(Comparator.comparingDouble(p -> p.distanceToSqr(center)));
             if (near.isEmpty()) {

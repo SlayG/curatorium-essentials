@@ -1,0 +1,187 @@
+# Phase 2: moderation and admin. Alice is op, Bob isn't.
+# ---- kick and bans
+Alice /kick Bob testing the kick
+reconnect Bob
+Alice /tempban Bob 1m being a test
+reconnect Bob
+console banlist players
+Alice /unban Bob
+reconnect Bob
+Alice /banip 10.0.0.5 a test address
+console banlist ips
+Alice /unbanip 10.0.0.5
+Bob /kick Alice not allowed
+# ---- mutes
+Alice /mute Bob 30s spamming
+Bob hello while muted
+Bob /msg Alice muted msg
+Bob /mail send Alice muted mail
+Bob /list
+Alice /mute Bob
+Bob hello after unmute
+# ---- jails
+Alice /setjail cell
+Alice /jails
+Alice /togglejail Bob cell 20s being naughty
+Bob /seen Alice
+Bob /msg Alice can I still message
+move Bob
+sleep 1
+state Bob
+Alice /jailedplayers
+Alice /togglejail Bob
+Bob /seen Alice
+# ---- vanish
+Alice /vanish
+Bob /list
+Bob /msg Alice can you hear me
+disconnect Alice
+reconnect Alice
+Alice /vanish off
+Bob /list
+# ---- player state
+Alice /god
+console damage Alice 5
+state Alice
+Alice /god off
+Alice /fly Bob
+state Bob
+Alice /fly Bob off
+Alice /gmc
+state Alice
+Alice /gamemode survival Bob
+Alice /gms
+Alice /heal
+Alice /feed Bob
+Alice /speed fly 5
+state Alice
+Alice /speed fly 1
+Alice /exp give Bob 5L
+Alice /exp show Bob
+Alice /burn Bob 1
+Alice /rest
+Alice /sudo Bob c:hello from sudo
+Alice /sudo Bob list
+Bob /god
+Bob /suicide
+sleep 1
+Alice /kill Bob
+sleep 1
+# ---- inventories and items
+Alice /give Bob diamond 5
+Alice /invsee Bob
+close Alice
+Alice /enderchest Bob
+close Alice
+Alice /i diamond_sword
+Alice /eenchant sharpness 5
+Alice /eenchant sharpness 10
+Alice /eenchant minecraft:efficiency
+Alice /itemname &cExcalibur
+Alice /itemlore add &7Legendary
+Alice /itemdb
+Alice /repair
+Alice /more
+Alice /hat
+Alice /hat remove
+Alice /i iron_ingot 20
+Alice /condense
+Alice /unlimited stone
+Alice /unlimited list
+Alice /skull Bob
+Alice /book
+Alice /erecipe iron_block
+close Alice
+Alice /disposal
+close Alice
+Alice /clearinventory
+Alice /clearinventory
+Alice /clearinventory Bob diamond 2
+Alice /workbench
+close Alice
+Alice /anvil
+close Alice
+Alice /grindstone
+close Alice
+Alice /loom
+close Alice
+Alice /smithingtable
+close Alice
+Alice /stonecutter
+close Alice
+Alice /cartographytable
+close Alice
+Alice /editsign set 1 hello
+# ---- power tools
+Alice /i stick
+Alice /pt list
+use Alice
+Alice /pt a:me waves the stick
+Alice /pt l:
+use Alice
+Alice /ptlist
+Alice /ptt
+use Alice
+Alice /ptt
+Alice /pt
+# ---- world
+Alice /time day
+Alice /time 17:30
+Alice /time add 1000
+Alice /time query daytime
+Alice /time
+Alice /ptime midnight Bob
+sleep 1.5
+state Bob
+Alice /ptime reset Bob
+Alice /weather rain
+Alice /pweather clear Bob
+sleep 1.5
+state Bob
+Alice /pweather reset Bob
+Alice /weather clear
+Alice /thunder true 10
+Alice /weather
+Alice /weather sun
+Alice /lightning Bob
+Alice /spawnmob zombie 3 Bob
+Alice /spawnmob creeper 50 Bob
+Alice /remove monsters 50
+Alice /remove drops
+Alice /remove type minecraft:lightning_bolt
+Alice /gc
+Alice /backup
+# ---- fun
+Alice /beezooka
+Alice /kittycannon
+Alice /fireball
+Alice /fireball arrow 3
+Alice /fireball nonsense
+Alice /firework
+Alice /ice Bob
+Alice /break
+sleep 1.5
+# ---- kits
+Alice /clearinventory
+Alice /clearinventory
+Alice /i bread 16
+Alice /i iron_sword
+Alice /createkit starter 1h
+Alice /createkit once once
+Alice /showkit starter
+Alice /kit
+click Alice 1
+Alice /kit starter
+Alice /kit once
+Alice /kitreset starter
+Alice /kit starter
+Alice /kit starter Bob
+Bob /kit
+console lp user Bob permission set essentials.kits.starter true
+sleep 1
+Bob /kit
+click Bob 0
+Bob /kit starter
+Alice /delkit once
+Alice /kit
+close Alice

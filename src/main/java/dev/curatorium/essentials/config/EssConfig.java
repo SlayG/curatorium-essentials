@@ -96,7 +96,79 @@ public final class EssConfig {
         MAILS_PER_MINUTE = b.comment("Most mails one player can send per minute.").defineInRange("mailsPerMinute", 5, 1, 1000);
         b.pop();
 
+        b.comment("Bans, kicks and mutes.").push("moderation");
+        MUTE_BLOCKED = b.comment("Commands a muted player can't use (any name or alias; Essentials' own aliases are",
+                        "matched to their command). /mail send is always blocked while muted.")
+                .defineListAllowEmpty("muteBlockedCommands", List.of("msg", "r", "me", "helpop", "broadcast",
+                        "broadcastworld", "say", "teammsg", "tm", "tell", "w"), EssConfig::isString);
+        BAN_DEFAULT_REASON = b.comment("Reason used when a ban, kick or mute gives none.")
+                .define("defaultReason", "The ban hammer has spoken!");
+        b.pop();
+
+        b.comment("Jails (/setjail, /togglejail).").push("jail");
+        JAIL_ALLOWED = b.comment("Commands a jailed player may still use. Everything else is blocked.")
+                .defineListAllowEmpty("allowedCommands", List.of("msg", "r", "mail", "helpop", "rules", "motd",
+                        "list", "help", "afk", "togglejail", "ping", "playtime"), EssConfig::isString);
+        JAIL_ONLINE_TIME = b.comment("Timed jail sentences only count down while the player is online.")
+                .define("countOnlineTimeOnly", false);
+        JAIL_RADIUS = b.comment("How far (blocks) a jailed player may move from the jail point before being pulled back.",
+                        "0 holds them in place.")
+                .defineInRange("radius", 0, 0, 256);
+        b.pop();
+
+        b.comment("Item and inventory commands.").push("items");
+        ITEM_BLACKLIST = b.comment("Items /item and /give refuse (unless essentials.itemspawn.exempt), e.g. [\"minecraft:bedrock\"].")
+                .defineListAllowEmpty("spawnBlacklist", List.of(), EssConfig::isString);
+        CLEAR_CONFIRM = b.comment("/clearinventory asks you to run it again to confirm, unless the player turns this off",
+                        "with /clearinventoryconfirmtoggle.")
+                .define("confirmClearInventory", true);
+        b.pop();
+
+        b.comment("World commands.").push("world");
+        SPAWNMOB_LIMIT = b.comment("Most mobs one /spawnmob can spawn (unless essentials.spawnmob.nolimit).")
+                .defineInRange("spawnmobLimit", 10, 1, 1000);
+        REMOVE_MAX_RADIUS = b.comment("Largest /remove radius; 0 for no limit (the whole dimension when no radius is given).")
+                .defineInRange("removeMaxRadius", 0, 0, 100_000);
+        BACKUP_COMMAND = b.comment("Shell command /backup runs, e.g. \"/home/minecraft/backup.sh\". \"\" turns /backup off.",
+                        "The world is saved first and saving is paused until the command finishes.")
+                .define("backupCommand", "");
+        b.pop();
+
+        b.comment("Kits (/kit, /createkit).").push("kits");
+        FIRST_JOIN_KIT = b.comment("Kit given to players on their first join. \"\" for none.")
+                .define("firstJoinKit", "");
+        b.pop();
+
         SPEC = b.build();
+    }
+
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> MUTE_BLOCKED;
+    public static final ModConfigSpec.ConfigValue<String> BAN_DEFAULT_REASON;
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> JAIL_ALLOWED;
+    public static final ModConfigSpec.BooleanValue JAIL_ONLINE_TIME;
+    public static final ModConfigSpec.IntValue JAIL_RADIUS;
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> ITEM_BLACKLIST;
+    public static final ModConfigSpec.BooleanValue CLEAR_CONFIRM;
+    public static final ModConfigSpec.IntValue SPAWNMOB_LIMIT;
+    public static final ModConfigSpec.IntValue REMOVE_MAX_RADIUS;
+    public static final ModConfigSpec.ConfigValue<String> BACKUP_COMMAND;
+    public static final ModConfigSpec.ConfigValue<String> FIRST_JOIN_KIT;
+
+    private static Set<String> muteBlocked = Set.of();
+    private static Set<String> jailAllowed = Set.of();
+    private static Set<String> itemBlacklist = Set.of();
+
+    /** Whether a muted player is blocked from {@code command} (a main command name or a vanilla label). */
+    public static boolean muteBlocks(String command) {
+        return muteBlocked.contains(command);
+    }
+
+    public static boolean jailAllows(String command) {
+        return jailAllowed.contains(command);
+    }
+
+    public static boolean itemBlacklisted(String itemId) {
+        return itemBlacklist.contains(itemId);
     }
 
     public static final ModConfigSpec.ConfigValue<String> CHAT_FORMAT;
@@ -143,6 +215,9 @@ public final class EssConfig {
         cooldowns = pairs(COOLDOWNS.get(), "cooldowns");
         costs = pairs(COSTS.get(), "costs");
         countEnderChest = COUNT_ENDER_CHEST.get();
+        muteBlocked = lower(MUTE_BLOCKED.get());
+        jailAllowed = lower(JAIL_ALLOWED.get());
+        itemBlacklist = lower(ITEM_BLACKLIST.get());
         Map<String, String> formats = new HashMap<>();
         for (String entry : GROUP_FORMATS.get()) {
             int eq = entry.indexOf('=');

@@ -61,14 +61,38 @@ for line in open(STEPS if os.path.isfile(STEPS) else os.path.join(HERE, STEPS), 
     elif who == "sleep":
         time.sleep(float(cmd))
     elif who == "move":
-        bots[cmd].move()
+        parts = cmd.split()
+        bots[parts[0]].move(float(parts[1]) if len(parts) > 1 else 0.5)
+        show()
+    elif who == "click":
+        name, slot = cmd.split()
+        print("\n## %s clicks slot %s" % (name, slot))
+        bots[name].click(int(slot))
+        show()
+    elif who == "close":
+        bots[cmd].close_screen()
+        show()
+    elif who == "use":
+        print("\n## %s uses held item" % cmd)
+        bots[cmd].use()
+        show()
+    elif who == "state":
+        print("\n## state of %s: %s pos=%s" % (cmd, bots[cmd].state_info, [round(v, 1) for v in bots[cmd].pos or []]))
+    elif who == "disconnect":
+        bots[cmd].close()
+        del bots[cmd]
+        print("\n## %s disconnected" % cmd)
         show()
     elif who == "reconnect":
         if cmd in bots:
             bots[cmd].close()
             time.sleep(1)
-        bots[cmd] = Bot(cmd, PORT)
-        print("\n## %s reconnected" % cmd)
+        try:
+            bots[cmd] = Bot(cmd, PORT)
+            print("\n## %s reconnected" % cmd)
+        except RuntimeError as e:
+            bots.pop(cmd, None)
+            print("\n## %s could not join: %s" % (cmd, e))
         show()
     else:
         do(who, cmd)

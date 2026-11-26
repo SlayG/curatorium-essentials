@@ -83,7 +83,29 @@ EssentialsX Chat:
 
 Messaging and info commands: `msg`, `r`, `rtoggle`, `msgtoggle`, `socialspy`, `ignore`, `mail`, `me`, `helpop`, `broadcast`, `broadcastworld`, `afk` (with auto-AFK and kick), `nick`, `realname`, `list`, `motd`, `rules`, `info`/`customtext`, `help`, `ping`, `playtime`, `seen`, `whois`, `getpos`, `depth`, `compass`, `near`.
 
-## Phase 2 — Moderation and admin (0.3.0)
+## Phase 2 — Moderation and admin (0.3.0) — done
+
+Tested on the dev server with two bot players (the bot now also reports tab-list, entity and
+GUI packets) and LuckPerms 5.4.150: bans, temp bans and IP bans (and the vanilla rejoin
+message), kicks, timed mutes blocking chat, `/msg` and `/mail send`, jails (commands blocked,
+pulled back after moving, released), vanish (hidden from tab list, entity tracking, `/list`,
+`/msg` and join/quit messages, also across a relog), god, fly, game modes, heal, feed, speed,
+exp, kill, suicide, burn, sudo, `/invsee`, `/enderchest`, item and enchant commands, condense,
+recipe and disposal GUIs, every workstation, power tools, time/ptime, weather/pweather,
+lightning, spawnmob, remove, gc, the fun commands, kits (GUI claim, delays, once-only, per-kit
+LuckPerms node). Then checked in a real vanilla 1.21.1 client (no mods): `/unlimited` placing,
+`/editsign`, `/tree` and `/bigtree`, the kit and recipe GUIs, `/skull`, and moving items in
+`/invsee` (live updates, locked filler slots). Not tested yet: `/backup` with a real script.
+
+Notes from building it:
+- Bans live in vanilla's `banned-players.json`/`banned-ips.json`, so expiry and the login check are vanilla's.
+- Vanish needs mixins (entity tracking, tab list and join/quit messages at login); sounds and particles a vanished player makes still reach others.
+- `/item`, `/enchant`, `/recipe`, `/clear`, `/xp` stay vanilla unless added to `commands.overrideVanilla`; Essentials' versions answer to `/i`, `/eenchant`, `/erecipe`, `/ci`, `/exp`.
+- `/give`, `/kill`, `/gamemode` take vanilla's arguments (selectors work); `/give` without an amount gives one, `/i` a full stack.
+- `/unlimited` covers blocks only. Power tools run on right click, and on left click of a block or entity (`{player}` = the player hit); left-clicking air never reaches the server.
+- `/ptime` and `/pweather` are resent every second (every tick while the real rain fades), since the server keeps sending the real time and weather.
+
+Planned:
 
 - Bans and mutes: `ban`, `tempban`, `banip`, `tempbanip`, `unban`, `unbanip`, `kick`, `kickall`, `mute` (timed, with reason); uses the vanilla ban list so `/pardon` still works.
 - Jails: `setjail`, `deljail`, `jails`, `togglejail`, `jailedplayers` — jailed players are held in place, can't use commands, timer counts online or real time.

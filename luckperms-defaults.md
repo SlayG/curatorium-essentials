@@ -55,7 +55,7 @@ lp group default permission set essentials.nick true
 lp group default permission set essentials.chat.color true
 ```
 
-## Nodes (0.2.0)
+## Nodes (0.2.0: chat and messaging)
 
 `<cmd>.others` nodes let a player use the command on someone else.
 
@@ -108,6 +108,49 @@ lp group default permission set essentials.chat.color true
 | `essentials.nocommandcost.all` | Use priced commands for free (or `essentials.nocommandcost.<command>` for one) |
 | `essentials.nick.allowlong` | Nicknames longer than `names.nickMaxLength` |
 | `essentials.near.maxexempt` | `/near` past `misc.nearMaxRadius` |
+
+## Nodes (0.3.0: moderation and admin)
+
+Every Phase 2 command is **op 2** unless listed under op 4 below, apart from `/suicide`,
+`/itemdb` and `/recipe` (everyone) and `/kit` (everyone, but each kit needs its own node).
+The command node is `essentials.<command>`; `/gmc`, `/gms`, `/gma`, `/gmsp` use
+`essentials.gamemode.<mode>`.
+
+| Node | What it allows | Default |
+|---|---|---|
+| `essentials.ban.offline`, `essentials.mute.offline`, `essentials.togglejail.offline` | Ban, mute or jail players who are offline | op 2 |
+| `essentials.ban.exempt`, `essentials.kick.exempt`, `essentials.mute.exempt`, `essentials.jail.exempt`, `essentials.kill.exempt`, `essentials.sudo.exempt`, `essentials.lightning.exempt`, `essentials.nuke.exempt`, `essentials.kickall.exempt` | Can't be banned, kicked, muted… by others | op 4 |
+| `essentials.ban.notify`, `essentials.banip.notify`, `essentials.kick.notify`, `essentials.mute.notify`, `essentials.jail.notify` | Sees ban, kick, mute and jail announcements | op 2 |
+| `essentials.vanish.see` | Sees vanished players (entity, tab list, `/list`, join and quit messages) | op 2 |
+| `essentials.gamemode.<survival\|creative\|adventure\|spectator>`, `essentials.gamemode.others` | Each game mode; changing others' | op 2 |
+| `essentials.invsee.modify`, `essentials.enderchest.modify` | Change what's in someone's inventory or ender chest (without it, view only) | op 2 |
+| `essentials.invsee.preventmodify` | Nobody can change this player's inventory through `/invsee` | op 4 |
+| `essentials.clearinventory.others`, `essentials.clearinventory.all` | `/ci <player>`; `/ci *` (op 4) | op 2 / op 4 |
+| `essentials.itemspawn.exempt` | `/i` and `/give` items on `items.spawnBlacklist` | op 4 |
+| `essentials.itemname.color`, `.format`, `.magic` (also `essentials.itemlore.*`, `essentials.editsign.*`) | Codes in item names, lore and signs | op 2 |
+| `essentials.enchantments.allowunsafe` | Levels above normal, and enchantments on items that can't take them | op 4 |
+| `essentials.repair.all` | `/repair all` | op 2 |
+| `essentials.spawnmob.<entity>`, `essentials.spawnmob.nolimit` | Spawning each mob (`essentials.spawnmob.zombie`…); past `world.spawnmobLimit` | op 2 / op 4 |
+| `essentials.kits.<name>` | Using kit `<name>` (`/kit`, the kit GUI) | op 2 |
+| `essentials.kit.others`, `essentials.kit.exemptdelay` | Giving kits to others; ignoring kit delays | op 2 / op 4 |
+| `essentials.break.bedrock` | `/break` on bedrock | op 4 |
+
+Op 4 commands: `/kickall`, `/sudo`, `/unlimited`, `/createkit`, `/delkit`, `/kitreset`,
+`/backup`, `/nuke`, `/antioch`, `/break`.
+
+Give everyone a starter kit:
+
+```
+lp group default permission set essentials.kits.starter true
+```
+
+## Vanilla commands with the same name
+
+Essentials replaces a vanilla command only when its name is in `commands.overrideVanilla`
+(default: `msg tell w me tp teleport give kick ban ban-ip pardon pardon-ip time weather
+gamemode kill list help`). The others keep vanilla's version and Essentials' is reachable
+through an alias: `/i` (`/item`), `/eenchant` (`/enchant`), `/erecipe` (`/recipe`),
+`/ci` (`/clear`), `/exp` (`/xp`). Add a name to the list to switch it over.
 
 ## Teleport commands
 

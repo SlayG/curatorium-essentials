@@ -12,6 +12,7 @@ import dev.curatorium.essentials.text.Messages;
 import dev.curatorium.essentials.util.PlayerLookup;
 import java.util.List;
 import java.util.Locale;
+import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -36,9 +37,14 @@ public abstract class EssCommand {
      * @param aliases      other names, registered as copies of the command
      */
     protected EssCommand(String name, int defaultLevel, String... aliases) {
+        this(name, "essentials." + name.toLowerCase(Locale.ROOT), defaultLevel, aliases);
+    }
+
+    /** A command whose permission node isn't {@code essentials.<name>} (e.g. /gmc uses essentials.gamemode.creative). */
+    protected EssCommand(String name, String node, int defaultLevel, String... aliases) {
         this.name = name.toLowerCase(Locale.ROOT);
         this.aliases = List.of(aliases);
-        this.node = "essentials." + this.name;
+        this.node = node;
         this.defaultLevel = defaultLevel;
     }
 
@@ -96,11 +102,40 @@ public abstract class EssCommand {
         return Commands.argument(name, StringArgumentType.greedyString());
     }
 
-    /** The online player named by argument {@code name}, or an error. */
+    /** The online player named by argument {@code name}, or an error. Vanished players count as offline unless the source can see them. */
     protected static ServerPlayer online(CommandContext<CommandSourceStack> ctx, String name) throws CommandSyntaxException {
-        String input = StringArgumentType.getString(ctx, name);
-        return PlayerLookup.online(ctx.getSource().getServer(), input)
-                .orElseThrow(() -> error(Messages.get("player.notOnline", input)));
+        return online(ctx.getSource(), StringArgumentType.getString(ctx, name));
+    }
+
+    /** The online player named {@code input}, as {@link #online(CommandContext, String)}. */
+    protected static ServerPlayer online(CommandSourceStack source, String input) throws CommandSyntaxException {
+        return PlayerLookup.online(source, input).orElseThrow(() -> error(Messages.get("player.notOnline", input)));
+    }
+
+    /** The command's build context (registries for item, enchantment and entity arguments); set while commands register. */
+    protected static CommandBuildContext buildContext() {
+        return CommandRegistry.buildContext();
+    }
+
+    /** A command body that acts on one player. */
+    @FunctionalInterface
+    protected interface PlayerAction {
+        int run(CommandContext<CommandSourceStack> ctx, ServerPlayer target) throws CommandSyntaxException;
+    }
+
+    /**
+     * {@code /cmd} acts on the sender, {@code /cmd <player>} on someone else (needs
+     * {@code essentials.<name>.others}, default op).
+     */
+    protected final void selfOrOther(LiteralArgumentBuilder<CommandSourceStack> root, PlayerAction action) {
+        root.executes(exec(ctx -> action.run(ctx, self(ctx))))
+                .then(playerArg("player").requires(src -> has(src, "others", Perms.OP))
+                        .executes(exec(ctx -> action.run(ctx, online(ctx, "player")))));
+    }
+
+    /** Tells the sender about something done to another player (nothing if they did it to themselves). */
+    protected static void tellOther(CommandContext<CommandSourceStack> ctx, ServerPlayer target, Component message) {
+        if (ctx.getSource().getPlayer() != target) reply(ctx, message);
     }
 
     /** Any known player named by argument {@code name}, online or not, or an error. */

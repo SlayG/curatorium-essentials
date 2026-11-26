@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
+import dev.curatorium.essentials.player.Vanish;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.server.MinecraftServer;
@@ -26,23 +28,35 @@ public final class PlayerLookup {
         }
     }
 
-    /** Suggests online players' names. */
+    /** Suggests the names of online players the source can see (vanished players are left out). */
     public static final SuggestionProvider<CommandSourceStack> ONLINE = (ctx, builder) ->
-            SharedSuggestionProvider.suggest(ctx.getSource().getServer().getPlayerNames(), builder);
+            SharedSuggestionProvider.suggest(ctx.getSource().getServer().getPlayerList().getPlayers().stream()
+                    .filter(p -> Vanish.canSee(ctx.getSource(), p))
+                    .map(p -> p.getGameProfile().getName()), builder);
+
+    /** An online player the source can see (see {@link #online(MinecraftServer, String)}). */
+    public static Optional<ServerPlayer> online(CommandSourceStack source, String input) {
+        return online(source.getServer(), input, p -> Vanish.canSee(source, p));
+    }
 
     /**
      * An online player: exact name, then exact nickname, then the only player whose name or
      * nickname starts with the input.
      */
     public static Optional<ServerPlayer> online(MinecraftServer server, String input) {
+        return online(server, input, p -> true);
+    }
+
+    private static Optional<ServerPlayer> online(MinecraftServer server, String input, Predicate<ServerPlayer> visible) {
         ServerPlayer exact = server.getPlayerList().getPlayerByName(input);
-        if (exact != null) return Optional.of(exact);
+        if (exact != null && visible.test(exact)) return Optional.of(exact);
         String needle = Text.plain(input).toLowerCase(Locale.ROOT);
-        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+        List<ServerPlayer> players = server.getPlayerList().getPlayers().stream().filter(visible).toList();
+        for (ServerPlayer p : players) {
             if (needle.equals(Names.plainNick(p))) return Optional.of(p);
         }
         List<ServerPlayer> matches = new ArrayList<>();
-        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer p : players) {
             String nick = Names.plainNick(p);
             if (p.getGameProfile().getName().toLowerCase(Locale.ROOT).startsWith(needle)
                     || (nick != null && nick.startsWith(needle))) {

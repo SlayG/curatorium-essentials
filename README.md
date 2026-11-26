@@ -11,10 +11,11 @@ What's done and what's next: [PLAN.md](PLAN.md).
 
 ## Status
 
-**0.2.0, Phase 1 (chat and messaging).** EssentialsX Chat (group formats, LuckPerms prefixes,
-local chat, shouting), nicknames, AFK, private messages, mail, ignore, `/list`, `/help`, the text
-files (`motd`, `rules`, `info`) and player look-ups (`/seen`, `/whois`, `/near`…). Moderation,
-teleports, the economy and Discord arrive in later phases.
+**0.3.0, Phase 2 (moderation and admin).** Bans (in the vanilla ban lists, so `/pardon` still
+works), mutes, jails, vanish, god/fly/gamemode/heal and the other player commands, `/invsee`,
+item commands, power tools, portable workstations, time and weather (also per player), world
+tools and kits with a GUI picker. Phase 1 brought EssentialsX Chat, nicknames, AFK, private
+messages, mail and the info commands. Teleports, the economy and Discord arrive in later phases.
 
 ## Installing
 
@@ -30,7 +31,8 @@ is optional; without it, the economy is off. Nothing goes in the client pack.
 | `config/curatorium_essentials/config.toml` chat and names sections | Chat format, per-group formats, local chat radius, nickname prefix and length, tab list, AFK timings. |
 | `config/curatorium_essentials/messages.properties` | Every message the mod shows, with `&` colour codes. Run `/essentials reload` after editing. |
 | `config/curatorium_essentials/motd.txt`, `rules.txt`, `info.txt`, `custom.txt` | Text for `/motd` (also shown on join), `/rules`, `/info` and `/customtext`. Lines starting with `#` start a chapter. |
-| `<world>/curatorium_essentials/` | Player data (`userdata/<uuid>.json`) and, in later phases, warps, jails, kits and so on. |
+| `config/curatorium_essentials/config.toml` moderation, jail, items, world, kits sections | Mute-blocked commands, jail rules (allowed commands, radius, online-time sentences), item blacklist, `/clearinventory` confirmation, `/spawnmob` limit, the `/backup` script, the first-join kit. |
+| `<world>/curatorium_essentials/` | Player data (`userdata/<uuid>.json`), `jails.json`, `kits.json`, and in later phases warps and so on. |
 | `logs/curatorium_essentials-economy.log` | Every coin taken or given by the mod. |
 
 ## Building
@@ -38,15 +40,18 @@ is optional; without it, the economy is off. Nothing goes in the client pack.
 You need a Java 21 JDK.
 
 ```
-gradlew.bat build
+./gradlew build
 ```
 
-The jar appears in `build\libs\`. It compiles against the Numismatics and Create jars in the
+The jar appears in `build/libs/`. It compiles against the Numismatics and Create jars in the
 folder set by `server_mods_dir` in `gradle.properties`, and against the LuckPerms API from Maven
 Central.
 
-`gradlew.bat runServer` starts a dev server in `run/`. Put LuckPerms (and anything else you want
+`./gradlew runServer` starts a dev server in `run/`. Put LuckPerms (and anything else you want
 to test with) in `run/mods`.
+
+The mod uses a few small mixins (server-side only) for vanish: hiding a vanished player's
+entity, tab-list entry and join/quit messages.
 
 ## License
 
