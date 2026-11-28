@@ -10,7 +10,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.fml.ModList;
 
 /**
- * Curatorium Claims, looked up by reflection so Essentials builds and runs without it: whether
+ * Creatorium Claims, looked up by reflection so Essentials builds and runs without it: whether
  * a spot is in a claim, and whether that claim is under siege.
  */
 public final class ClaimsHook {
@@ -21,17 +21,17 @@ public final class ClaimsHook {
     private static boolean init() {
         if (tried) return current != null;
         tried = true;
-        if (!ModList.get().isLoaded("curatorium_claims")) return false;
+        if (!ModList.get().isLoaded("creatorium_claims")) return false;
         try {
             Class<?> manager = Class.forName("dev.curatorium.claims.ClaimManager");
             current = manager.getMethod("current");
             claimAt = manager.getMethod("claimAt", Level.class, BlockPos.class);
             claimId = Class.forName("dev.curatorium.claims.data.Claim").getField("id");
             attacksOn = Class.forName("dev.curatorium.claims.siege.SiegeEngineBlockEntity").getMethod("attacksOn", UUID.class);
-            CuratoriumEssentials.LOGGER.info("Curatorium Claims found: teleports respect sieges");
+            CuratoriumEssentials.LOGGER.info("Creatorium Claims found: teleports respect sieges");
             return true;
         } catch (ReflectiveOperationException | RuntimeException e) {
-            CuratoriumEssentials.LOGGER.warn("Curatorium Claims is installed but its API has changed; siege checks are off", e);
+            CuratoriumEssentials.LOGGER.warn("Creatorium Claims is installed but its API has changed; siege checks are off", e);
             current = null;
             return false;
         }
