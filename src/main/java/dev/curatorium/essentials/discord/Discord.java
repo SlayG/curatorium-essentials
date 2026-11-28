@@ -22,6 +22,7 @@ import net.dv8tion.jda.api.entities.channel.attribute.IWebhookContainer;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MarkdownSanitizer;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.dv8tion.jda.api.utils.messages.MessageRequest;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -62,7 +63,8 @@ public final class Discord {
     }
 
     private static int fingerprint() {
-        return Objects.hash(DiscordConfig.ENABLED.get(), DiscordConfig.token(), DiscordConfig.GUILD.get(), DiscordConfig.MEMBER_INTENT.get());
+        return Objects.hash(DiscordConfig.ENABLED.get(), DiscordConfig.token(), DiscordConfig.GUILD.get(), DiscordConfig.MEMBER_INTENT.get(),
+                DiscordConfig.EMOJIS.get());
     }
 
     public static synchronized void start(MinecraftServer server) {
@@ -79,9 +81,10 @@ public final class Discord {
             EnumSet<GatewayIntent> intents = EnumSet.of(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES);
             // Role-change events for role sync. Privileged: the developer portal must allow it.
             if (DiscordConfig.MEMBER_INTENT.get()) intents.add(GatewayIntent.GUILD_MEMBERS);
-            jda = JDABuilder.createLight(token, intents)
-                    .addEventListeners(new DiscordListener(server))
-                    .build();
+            JDABuilder builder = JDABuilder.createLight(token, intents);
+            // Emoji add/remove/rename events and the guild's emoji list. Not a privileged intent.
+            if (DiscordConfig.EMOJIS.get()) builder.enableIntents(GatewayIntent.GUILD_EXPRESSIONS).enableCache(CacheFlag.EMOJI);
+            jda = builder.addEventListeners(new DiscordListener(server)).build();
         } catch (RuntimeException e) {
             // Thrown for a malformed token. Never log the token itself.
             LOG.error("Could not start the Discord bot: {}", e.getMessage());
@@ -144,6 +147,7 @@ public final class Discord {
         timer = null;
         ready = false;
         jda = null;
+        DiscordEmojis.clear();
         synchronized (pending) {
             pending.clear();
         }
@@ -210,7 +214,7 @@ public final class Discord {
         long id = DiscordConfig.channel(DiscordConfig.types().getOrDefault("chat", "none"));
         if (id == 0) return;
         String name = player.getDisplayName().getString();
-        String message = escape(Text.plain(raw));
+        String message = DiscordEmojis.toDiscord(Text.plain(raw));
         if (!DiscordConfig.WEBHOOK.get()) {
             post(id, fill("discord.out.chat", escape(name), message));
             return;

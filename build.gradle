@@ -20,6 +20,10 @@ neoForge {
     mods {
         "${mod_id}" { sourceSet(sourceSets.main) }
     }
+    unitTest {
+        enable()
+        testedMod = mods."${mod_id}"
+    }
 }
 
 repositories {
@@ -53,7 +57,12 @@ dependencies {
     bundled('net.dv8tion:JDA:6.7.0', jda)
     // The dev server loads JDA unrelocated from the classpath.
     additionalRuntimeClasspath('net.dv8tion:JDA:6.7.0', jda)
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+test { useJUnitPlatform() }
 
 def relocated = 'dev.curatorium.essentials.lib'
 tasks.named('shadowJar') {

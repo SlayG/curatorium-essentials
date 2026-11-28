@@ -11,6 +11,11 @@ What's done and what's next: [PLAN.md](PLAN.md).
 
 ## Status
 
+**1.1.0 (2026-11-28).** The Discord server's custom emojis: `:name:` in game chat shows as the
+real emoji on Discord, and the list is offered to other mods through `DiscordEmojis`, which
+[Curatorium Emotes](../curatorium-emotes) uses to draw them in game for players with that mod.
+Turn it off with `emojis.enabled` in `discord.toml`.
+
 **1.0.0 (2026-11-26).** Every phase is done and tested on a dev server with Create, Numismatics,
 LuckPerms, Curatorium Claims and the real Discord bot; see [PLAN.md](PLAN.md) for what was tested.
 
@@ -77,6 +82,9 @@ is optional; without it, the economy is off. Nothing goes in the client pack.
    `CURATORIUM_DISCORD_TOKEN` environment variable), your server ID as `guild`, and the chat,
    staff and console channel IDs (Developer Mode on, right-click, Copy ID). Add role IDs to
    `commandRoles` to let those roles run commands. Saving the file starts the bot.
+
+Custom emojis need nothing extra: the emoji intent isn't privileged, so there's no portal switch
+for it. The bot reads the emojis of the `guild` server (or of its only server when that's empty).
 
 For role sync, give the bot Manage Roles and put its role above the synced roles; for nickname
 sync, Manage Nicknames. Turning on `link.memberIntent` needs the **Server Members Intent** on the Bot page.

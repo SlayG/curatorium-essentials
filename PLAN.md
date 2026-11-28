@@ -281,6 +281,23 @@ Done in 0.8.0, bot-tested on the dev server:
 
 Still to do before 1.0.0: anything else from the review, and the untested items listed under each phase.
 
+## 1.1.0 — Discord emojis — done
+
+The Discord server's custom emojis, for [Curatorium Emotes](../curatorium-emotes) (a client and
+server mod that draws them in chat). Essentials stays server-only: it registers no network channel.
+
+- The bot asks for the `GUILD_EXPRESSIONS` intent and caches emojis (`emojis.enabled`, on by
+  default; changing it restarts the bot). Not privileged, so no developer-portal switch.
+- `DiscordEmojis`: the list for `bot.guild`, refreshed on login and on Discord's emoji
+  added/removed/renamed events. Public API in plain Java types (`snapshot()`, `addListener()`,
+  `find()`), so nothing from the relocated JDA leaks out.
+- The chat relay turns a known `:name:` into `<:name:id>` / `<a:name:id>`, escaping markdown only
+  around it (an underscore in a name stays intact). Discord to game needed no change:
+  `getContentDisplay()` already gives `:name:`.
+
+Tested: 297 emojis read on the dev server; relay conversion unit-tested (`DiscordEmojisTest`);
+the list reached a dev client through Curatorium Emotes. Untested: live add/rename/remove.
+
 ## Testing and deployment
 
 - Each phase is tested on a local NeoForge server with LuckPerms and Numismatics, joined from the normal Creatorium client pack **without this mod**, to prove it stays server-only.

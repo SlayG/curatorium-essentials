@@ -25,6 +25,7 @@ public final class DiscordConfig {
     public static final ModConfigSpec.BooleanValue FROM_DISCORD;
     public static final ModConfigSpec.IntValue MAX_LENGTH;
     public static final ModConfigSpec.BooleanValue VANISH_FAKE;
+    public static final ModConfigSpec.BooleanValue EMOJIS;
     public static final ModConfigSpec.ConfigValue<String> CONSOLE_LEVEL;
     public static final ModConfigSpec.ConfigValue<List<? extends String>> COMMAND_ROLES;
     public static final ModConfigSpec.ConfigValue<String> STATUS;
@@ -74,6 +75,11 @@ public final class DiscordConfig {
         FROM_DISCORD = b.comment("Show messages from the Discord chat channel in game.").define("fromDiscord", true);
         MAX_LENGTH = b.comment("Longer Discord messages are cut to this many characters in game.").defineInRange("maxLength", 256, 16, 2000);
         VANISH_FAKE = b.comment("When someone vanishes or unvanishes, post a leave or join message for them.").define("vanishFakeMessages", true);
+        b.pop();
+
+        b.comment("The Discord server's custom emojis.").push("emojis");
+        EMOJIS = b.comment("Track the server's custom emojis: :name: in game chat shows as the emoji on Discord, and",
+                "players with Curatorium Emotes see them in game. Changing this restarts the bot.").define("enabled", true);
         b.pop();
 
         b.push("console");

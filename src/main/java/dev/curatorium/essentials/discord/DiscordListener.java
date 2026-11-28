@@ -81,6 +81,7 @@ final class DiscordListener extends ListenerAdapter {
         if (console != 0 && (console == DiscordConfig.channel("chat") || console == DiscordConfig.channel("staff"))) {
             Discord.LOG.warn("Discord: the console channel is also the chat or staff channel; messages there are taken as commands, not chat");
         }
+        DiscordEmojis.refresh(e.getJDA());
         Discord.onReady();
         server.execute(() -> {
             Discord.updateStatus(server);
@@ -105,6 +106,23 @@ final class DiscordListener extends ListenerAdapter {
         } else if (code != null && code != CloseCode.GRACEFUL_CLOSE) {
             Discord.LOG.error("Discord connection closed: {}", code.getMeaning());
         }
+    }
+
+    // ------------------------------------------------------------------ emojis
+
+    @Override
+    public void onEmojiAdded(net.dv8tion.jda.api.events.emoji.EmojiAddedEvent e) {
+        if (DiscordEmojis.isWatched(e.getGuild())) DiscordEmojis.refresh(e.getJDA());
+    }
+
+    @Override
+    public void onEmojiRemoved(net.dv8tion.jda.api.events.emoji.EmojiRemovedEvent e) {
+        if (DiscordEmojis.isWatched(e.getGuild())) DiscordEmojis.refresh(e.getJDA());
+    }
+
+    @Override
+    public void onEmojiUpdateName(net.dv8tion.jda.api.events.emoji.update.EmojiUpdateNameEvent e) {
+        if (DiscordEmojis.isWatched(e.getGuild())) DiscordEmojis.refresh(e.getJDA());
     }
 
     // ------------------------------------------------------------------ messages
